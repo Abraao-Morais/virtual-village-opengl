@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstdlib>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -9,21 +10,28 @@
 
 #include "camera.h"
 #include "ground.h"
+#include "house.h"
 
+// Dimensões iniciais da janela
 const unsigned int WIDTH = 800;
 const unsigned int HEIGHT = 600;
 
-GLFWwindow* Window = nullptr;
-
+// Janela e câmara
+GLFWwindow* window = nullptr;
 Camera camera;
+
 int screenWidth = WIDTH;
 int screenHeight = HEIGHT;
+
+// Controlo do tempo
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
 
 // --------------------------------------------------
 // Callbacks
 // --------------------------------------------------
 
-void framebufferSizeCallback(
+void framebuffer_size_callback(
     GLFWwindow* window,
     int width,
     int height
@@ -34,7 +42,7 @@ void framebufferSizeCallback(
     glViewport(0, 0, width, height);
 }
 
-void mouseCallback(
+void mouse_callback(
     GLFWwindow* window,
     double xpos,
     double ypos
@@ -43,113 +51,40 @@ void mouseCallback(
 }
 
 // --------------------------------------------------
-// Inicialização da janela e do OpenGL
+// Input
 // --------------------------------------------------
 
-void inicializaOpenGL() {
-    if (!glfwInit()) {
-        std::cerr << "Falha ao inicializar GLFW.\n";
-        std::exit(EXIT_FAILURE);
+void processInput(GLFWwindow* window) {
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, true);
     }
 
-    glfwWindowHint(
-        GLFW_CONTEXT_VERSION_MAJOR, 4
-    );
-    glfwWindowHint(
-        GLFW_CONTEXT_VERSION_MINOR, 0
-    );
-    glfwWindowHint(
-        GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE
-    );
-
-    Window = glfwCreateWindow(
-        WIDTH,
-        HEIGHT,
-        "Virtual Village - OpenGL",
-        nullptr,
-        nullptr
-    );
-
-    if (!Window) {
-        std::cerr << "Falha ao criar janela.\n";
-        glfwTerminate();
-        std::exit(EXIT_FAILURE);
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        camera.processKeyboard(GLFW_KEY_W, deltaTime);
     }
 
-    glfwMakeContextCurrent(Window);
-
-    glfwSetFramebufferSizeCallback(
-        Window, framebufferSizeCallback
-    );
-
-    // Captura o mouse para controlar a visão.
-    glfwSetInputMode(
-        Window,
-        GLFW_CURSOR,
-        GLFW_CURSOR_DISABLED
-    );
-
-    glfwSetCursorPosCallback(Window, mouseCallback);
-
-    if (!gladLoadGLLoader(
-        (GLADloadproc)glfwGetProcAddress
-    )) {
-        std::cerr << "Falha ao inicializar GLAD.\n";
-        glfwTerminate();
-        std::exit(EXIT_FAILURE);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        camera.processKeyboard(GLFW_KEY_S, deltaTime);
     }
 
-    glViewport(0, 0, WIDTH, HEIGHT);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        camera.processKeyboard(GLFW_KEY_A, deltaTime);
+    }
 
-    // Habilita o teste de profundidade 3D.
-    glEnable(GL_DEPTH_TEST);
-
-    std::cout << "GPU: "
-              << glGetString(GL_RENDERER) << '\n';
-
-    std::cout << "OpenGL: "
-              << glGetString(GL_VERSION) << '\n';
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        camera.processKeyboard(GLFW_KEY_D, deltaTime);
+    }
 }
 
 // --------------------------------------------------
-// Compilação dos shaders
+// Shaders
 // --------------------------------------------------
 
-GLuint compileShader(
-    GLenum type,
-    const char* source
-) {
-    GLuint shader = glCreateShader(type);
-
-    glShaderSource(shader, 1, &source, nullptr);
-    glCompileShader(shader);
-
-    GLint success = GL_FALSE;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-
-    if (!success) {
-        char infoLog[1024];
-
-        glGetShaderInfoLog(
-            shader, sizeof(infoLog),
-            nullptr, infoLog
-        );
-
-        std::cerr << "Erro ao compilar shader:\n"
-                  << infoLog << '\n';
-
-        glDeleteShader(shader);
-        return 0;
-    }
-
-    return shader;
-}
-
-GLuint criarShaderProgram() {
-    const char* vertexSource = R"(
+GLuint createShaderProgram() {
+    const char* vertexShaderSource = R"(
         #version 400 core
 
-        layout(location = 0) in vec3 vertexPosition;
+        layout (location = 0) in vec3 vertexPosition;
 
         uniform mat4 model;
         uniform mat4 view;
@@ -157,138 +92,170 @@ GLuint criarShaderProgram() {
 
         void main() {
             gl_Position =
-                projection * view * model
-                * vec4(vertexPosition, 1.0);
+                projection * view * model *
+                vec4(vertexPosition, 1.0);
         }
     )";
 
-    const char* fragmentSource = R"(
+    const char* fragmentShaderSource = R"(
         #version 400 core
 
-        out vec4 fragColor;
+        out vec4 FragColor;
 
         uniform vec3 groundColor;
 
         void main() {
-            fragColor = vec4(groundColor, 1.0);
+            FragColor = vec4(groundColor, 1.0);
         }
     )";
 
-    GLuint vertexShader = compileShader(
-        GL_VERTEX_SHADER, vertexSource
-    );
+    // Compilar vertex shader
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
+    glCompileShader(vertexShader);
 
-    GLuint fragmentShader = compileShader(
-        GL_FRAGMENT_SHADER, fragmentSource
-    );
+    GLint success;
+    GLchar infoLog[512];
 
-    if (vertexShader == 0 || fragmentShader == 0) {
-        if (vertexShader != 0) {
-            glDeleteShader(vertexShader);
-        }
-
-        if (fragmentShader != 0) {
-            glDeleteShader(fragmentShader);
-        }
-
-        return 0;
-    }
-
-    GLuint program = glCreateProgram();
-
-    glAttachShader(program, vertexShader);
-    glAttachShader(program, fragmentShader);
-
-    glLinkProgram(program);
-
-    GLint success = GL_FALSE;
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
 
     if (!success) {
-        char infoLog[1024];
-
-        glGetProgramInfoLog(
-            program, sizeof(infoLog),
-            nullptr, infoLog
-        );
-
-        std::cerr << "Erro ao linkar shaders:\n"
+        glGetShaderInfoLog(vertexShader, 512, nullptr, infoLog);
+        std::cerr << "Erro no vertex shader:\n"
                   << infoLog << '\n';
+    }
 
-        glDeleteProgram(program);
-        program = 0;
+    // Compilar fragment shader
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
+    glCompileShader(fragmentShader);
+
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+
+    if (!success) {
+        glGetShaderInfoLog(fragmentShader, 512, nullptr, infoLog);
+        std::cerr << "Erro no fragment shader:\n"
+                  << infoLog << '\n';
+    }
+
+    // Criar programa
+    GLuint shaderProgram = glCreateProgram();
+
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+
+    if (!success) {
+        glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
+        std::cerr << "Erro ao ligar shaders:\n"
+                  << infoLog << '\n';
     }
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    return program;
+    return shaderProgram;
 }
 
 // --------------------------------------------------
-// Entrada do usuário
+// Main
 // --------------------------------------------------
 
-void processInput(float deltaTime) {
-    if (glfwGetKey(Window, GLFW_KEY_ESCAPE)
-        == GLFW_PRESS) {
-        glfwSetWindowShouldClose(Window, true);
+int main() {
+    // Inicializar GLFW
+    if (!glfwInit()) {
+        std::cerr << "Erro ao inicializar GLFW.\n";
+        return EXIT_FAILURE;
     }
 
-    if (glfwGetKey(Window, GLFW_KEY_W) == GLFW_PRESS) {
-        camera.processKeyboard(GLFW_KEY_W, deltaTime);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(
+        GLFW_OPENGL_PROFILE,
+        GLFW_OPENGL_CORE_PROFILE
+    );
+
+    // Criar janela
+    window = glfwCreateWindow(
+        WIDTH,
+        HEIGHT,
+        "Virtual Village - OpenGL",
+        nullptr,
+        nullptr
+    );
+
+    if (!window) {
+        std::cerr << "Erro ao criar a janela GLFW.\n";
+        glfwTerminate();
+        return EXIT_FAILURE;
     }
 
-    if (glfwGetKey(Window, GLFW_KEY_S) == GLFW_PRESS) {
-        camera.processKeyboard(GLFW_KEY_S, deltaTime);
+    glfwMakeContextCurrent(window);
+
+    // Inicializar GLAD
+    if (!gladLoadGLLoader(
+            (GLADloadproc)glfwGetProcAddress
+        )) {
+        std::cerr << "Erro ao inicializar GLAD.\n";
+        glfwDestroyWindow(window);
+        glfwTerminate();
+        return EXIT_FAILURE;
     }
 
-    if (glfwGetKey(Window, GLFW_KEY_A) == GLFW_PRESS) {
-        camera.processKeyboard(GLFW_KEY_A, deltaTime);
-    }
+    glfwSetFramebufferSizeCallback(
+        window,
+        framebuffer_size_callback
+    );
 
-    if (glfwGetKey(Window, GLFW_KEY_D) == GLFW_PRESS) {
-        camera.processKeyboard(GLFW_KEY_D, deltaTime);
-    }
-}
+    glfwSetCursorPosCallback(window, mouse_callback);
 
-// --------------------------------------------------
-// Loop principal
-// --------------------------------------------------
+    // Capturar o rato para controlar a câmara
+    glfwSetInputMode(
+        window,
+        GLFW_CURSOR,
+        GLFW_CURSOR_DISABLED
+    );
 
-void inicializaRenderizacao(
-    GLuint shaderProgram,
-    Ground& ground
-) {
-    float lastFrame = 0.0f;
+    // Configuração OpenGL
+    glViewport(0, 0, WIDTH, HEIGHT);
+    glEnable(GL_DEPTH_TEST);
 
-    while (!glfwWindowShouldClose(Window)) {
-        float currentFrame =
-            static_cast<float>(glfwGetTime());
+    // Criar shader
+    GLuint shaderProgram = createShaderProgram();
 
-        float deltaTime = currentFrame - lastFrame;
+    // Criar objetos da cena
+    Ground ground;
+    House house;
+
+    // Ciclo principal
+    while (!glfwWindowShouldClose(window)) {
+        float currentFrame = static_cast<float>(
+            glfwGetTime()
+        );
+
+        deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        processInput(deltaTime);
+        processInput(window);
 
-        glClearColor(0.45f, 0.65f, 0.85f, 1.0f);
-
+        // Limpar o ecrã
+        glClearColor(0.53f, 0.81f, 0.92f, 1.0f);
         glClear(
             GL_COLOR_BUFFER_BIT |
             GL_DEPTH_BUFFER_BIT
         );
 
-        glViewport(0, 0, screenWidth, screenHeight);
-
+        // Ativar shader
         glUseProgram(shaderProgram);
 
+        // Matrizes da cena
         glm::mat4 model = glm::mat4(1.0f);
-
         glm::mat4 view = camera.getViewMatrix();
 
-        float aspectRatio =
-            static_cast<float>(screenWidth) /
-            static_cast<float>(screenHeight);
+        float aspectRatio = static_cast<float>(screenWidth) /
+                            static_cast<float>(screenHeight);
 
         glm::mat4 projection = glm::perspective(
             glm::radians(60.0f),
@@ -297,60 +264,53 @@ void inicializaRenderizacao(
             300.0f
         );
 
+        // Enviar matrizes ao shader
         glUniformMatrix4fv(
             glGetUniformLocation(shaderProgram, "model"),
-            1, GL_FALSE, glm::value_ptr(model)
+            1,
+            GL_FALSE,
+            glm::value_ptr(model)
         );
 
         glUniformMatrix4fv(
             glGetUniformLocation(shaderProgram, "view"),
-            1, GL_FALSE, glm::value_ptr(view)
+            1,
+            GL_FALSE,
+            glm::value_ptr(view)
         );
 
         glUniformMatrix4fv(
             glGetUniformLocation(shaderProgram, "projection"),
-            1, GL_FALSE, glm::value_ptr(projection)
+            1,
+            GL_FALSE,
+            glm::value_ptr(projection)
         );
 
-        // Verde para o chão.
+        // Desenhar terreno
+        GLint colorLocation = glGetUniformLocation(
+            shaderProgram,
+            "groundColor"
+        );
+
         glUniform3f(
-            glGetUniformLocation(
-                shaderProgram, "groundColor"
-            ),
+            colorLocation,
             0.25f, 0.55f, 0.25f
         );
 
         ground.draw();
 
-        glfwSwapBuffers(Window);
+        // Desenhar casa
+        house.draw(colorLocation);
+
+        // Apresentar o frame
+        glfwSwapBuffers(window);
         glfwPollEvents();
     }
-}
 
-// --------------------------------------------------
-// main
-// --------------------------------------------------
-
-int main() {
-    inicializaOpenGL();
-
-    GLuint shaderProgram = criarShaderProgram();
-
-    if (shaderProgram == 0) {
-        glfwDestroyWindow(Window);
-        glfwTerminate();
-        return EXIT_FAILURE;
-    }
-
-    {
-        Ground ground;
-
-        inicializaRenderizacao(shaderProgram, ground);
-    }
-
+    // Libertar recursos
     glDeleteProgram(shaderProgram);
 
-    glfwDestroyWindow(Window);
+    glfwDestroyWindow(window);
     glfwTerminate();
 
     return EXIT_SUCCESS;
