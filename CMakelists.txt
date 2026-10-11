@@ -1,0 +1,79 @@
+cmake_minimum_required(VERSION 3.10)
+
+project(virtual-village-opengl LANGUAGES C CXX)
+
+# Define o padrão do C++
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Permite descarregar bibliotecas automaticamente
+include(FetchContent)
+
+# GLFW
+FetchContent_Declare(
+    glfw
+    GIT_REPOSITORY https://github.com/glfw/glfw.git
+    GIT_TAG 3.4
+)
+
+# GLM
+FetchContent_Declare(
+    glm
+    GIT_REPOSITORY https://github.com/g-truc/glm.git
+    GIT_TAG master
+)
+
+# STB Image
+FetchContent_Declare(
+    stb_image
+    GIT_REPOSITORY https://github.com/nothings/stb.git
+    GIT_TAG master
+)
+
+# Descarrega e configura as bibliotecas
+FetchContent_MakeAvailable(glfw glm stb_image)
+
+# Caminho do ficheiro GLAD
+set(GLAD_C_FILE "${CMAKE_SOURCE_DIR}/common/glad.c")
+
+# Verifica se o GLAD existe
+if(NOT EXISTS "${GLAD_C_FILE}")
+    message(FATAL_ERROR
+        "Arquivo common/glad.c nao encontrado. "
+        "Verifica a instalacao do GLAD."
+    )
+endif()
+
+# Bibliotecas do OpenGL conforme o sistema operativo
+if(WIN32)
+    set(OPENGL_LIBS opengl32)
+elseif(APPLE)
+    find_library(OpenGL_LIBRARY OpenGL REQUIRED)
+    set(OPENGL_LIBS ${OpenGL_LIBRARY})
+else()
+    find_package(OpenGL REQUIRED)
+    set(OPENGL_LIBS ${OPENGL_gl_LIBRARY})
+endif()
+
+# Cria um único executável com todos os ficheiros do projeto
+add_executable(virtual-village-opengl
+    src/main.cpp
+    src/camera.cpp
+    src/ground.cpp
+    ${GLAD_C_FILE}
+)
+
+# Pastas onde estão os cabeçalhos
+target_include_directories(virtual-village-opengl PRIVATE
+    "${CMAKE_SOURCE_DIR}/include"
+    "${CMAKE_SOURCE_DIR}/common"
+    "${CMAKE_SOURCE_DIR}/src"
+    "${glm_SOURCE_DIR}"
+    "${stb_image_SOURCE_DIR}"
+)
+
+# Liga as bibliotecas necessárias
+target_link_libraries(virtual-village-opengl PRIVATE
+    glfw
+    ${OPENGL_LIBS}
+)
