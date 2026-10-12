@@ -126,6 +126,16 @@ House::~House() {
     glDeleteVertexArrays(1, &VAO);
 }
 
+void House::draw() const {
+    glBindVertexArray(VAO);
+
+    glDrawArrays(GL_TRIANGLES, wallsStart, wallsCount);
+    glDrawArrays(GL_TRIANGLES, roofStart, roofCount);
+    glDrawArrays(GL_TRIANGLES, doorStart, doorCount);
+
+    glBindVertexArray(0);
+}
+
 void House::draw(GLint colorLocation) const {
     glBindVertexArray(VAO);
 

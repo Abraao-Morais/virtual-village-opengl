@@ -8,6 +8,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "shadow_map.h"
+#include "shader.h"
 #include "camera.h"
 #include "ground.h"
 #include "house.h"
@@ -55,102 +57,6 @@ void processInput(GLFWwindow* window) {
 }
 
 // --------------------------------------------------
-// Shaders
-// --------------------------------------------------
-
-GLuint createShaderProgram() {
-    const char* vertexShaderSource = R"(
-        #version 400 core
-
-        layout (location = 0) in vec3 vertexPosition;
-
-        uniform mat4 model;
-        uniform mat4 view;
-        uniform mat4 projection;
-
-        void main() {
-            gl_Position =
-                projection * view * model *
-                vec4(vertexPosition, 1.0);
-        }
-    )";
-
-    const char* fragmentShaderSource = R"(
-        #version 400 core
-
-        out vec4 FragColor;
-
-        uniform vec3 groundColor;
-
-        void main() {
-            FragColor = vec4(groundColor, 1.0);
-        }
-    )";
-
-    // Compilar vertex shader
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-
-    glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
-    glCompileShader(vertexShader);
-
-    GLint success;
-    GLchar infoLog[512];
-
-    glGetShaderiv(
-        vertexShader,
-        GL_COMPILE_STATUS,
-        &success
-    );
-
-    if (!success) {
-        glGetShaderInfoLog(
-            vertexShader,
-            512,
-            nullptr,
-            infoLog
-        );
-
-        std::cerr << "Erro no vertex shader:\n"
-                  << infoLog << '\n';
-    }
-
-    // Compilar fragment shader
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
-    glCompileShader(fragmentShader);
-
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-
-    if (!success) {
-        glGetShaderInfoLog(fragmentShader, 512, nullptr, infoLog);
-
-        std::cerr << "Erro no fragment shader:\n"
-                  << infoLog << '\n';
-    }
-
-    // Criar programa
-    GLuint shaderProgram = glCreateProgram();
-
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-
-    if (!success) {
-        glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
-
-        std::cerr << "Erro ao ligar shaders:\n"
-                  << infoLog << '\n';
-    }
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    return shaderProgram;
-}
-
-// --------------------------------------------------
 // Main
 // --------------------------------------------------
 
@@ -167,13 +73,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Criar janela
-    window = glfwCreateWindow(
-        WIDTH,
-        HEIGHT,
-        "Virtual Village - OpenGL",
-        nullptr,
-        nullptr
-    );
+    window = glfwCreateWindow(WIDTH, HEIGHT, "Virtual Village - OpenGL", nullptr, nullptr);
 
     if (!window) {
         std::cerr << "Erro ao criar a janela GLFW.\n";
@@ -204,99 +104,142 @@ int main() {
     glViewport(0, 0, WIDTH, HEIGHT);
     glEnable(GL_DEPTH_TEST);
 
-    // Criar shader
-    GLuint shaderProgram = createShaderProgram();
+    {
+        Shader shader(VILLAGE_SHADER_DIR "/basic.vert", VILLAGE_SHADER_DIR"/basic.frag");
+        Shader depthShader(VILLAGE_SHADER_DIR "/shadow.depth.vert", VILLAGE_SHADER_DIR "/shadow.depth.frag");
 
-    // Criar objetos da cena
-    Ground ground;
+        ShadowMap shadowMap;
 
-    House house1;
-    House house2;
-    House house3;
+        // Criar objetos da cena
+        Ground ground;
+        House house1;
+        House house2;
+        House house3;
+        House house4;
 
-    // Obter localizações dos uniforms
-    glUseProgram(shaderProgram);
+        shader.use();
+        GLuint shaderProgram = shader.id();
 
-    GLint modelLocation = glGetUniformLocation(shaderProgram, "model");
-    GLint viewLocation = glGetUniformLocation(shaderProgram, "view");
-    GLint projectionLocation = glGetUniformLocation(shaderProgram,"projection");
-    GLint colorLocation = glGetUniformLocation(shaderProgram, "groundColor");
+        GLint modelLocation = glGetUniformLocation(shaderProgram, "model");
+        GLint viewLocation = glGetUniformLocation(shaderProgram, "view");
+        GLint projectionLocation = glGetUniformLocation(shaderProgram,"projection");
+        GLint colorLocation = glGetUniformLocation(shaderProgram, "groundColor");
+        GLint lightSpaceLocation = glGetUniformLocation(shaderProgram, "lightSpaceMatrix");
+        GLint shadowMapLocation = glGetUniformLocation(shaderProgram, "shadowMap");
 
-    // Matrizes de transformação das casas
-    glm::mat4 modelHouse1 = glm::translate(
-        glm::mat4(1.0f),
-        glm::vec3(-3.0f, 0.0f, 0.0f)
-    );
+        // A textura de sombras será vinculada à unidade 0.
+        glUniform1i(shadowMapLocation, 0);
 
-    glm::mat4 modelHouse2 = glm::translate(
-        glm::mat4(1.0f),
-        glm::vec3(3.0f, 0.0f, 0.0f)
-    );
+        glm::mat4 modelGround(1.0f);
 
-    glm::mat4 modelHouse3 = glm::translate(
-        glm::mat4(1.0f),
-        glm::vec3(9.0f, 0.0f, 0.0f)
-    );
-
-    // Ciclo principal
-    while (!glfwWindowShouldClose(window)) {
-        float currentFrame = static_cast<float>(glfwGetTime());
-
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
-
-        processInput(window);
-
-        // Limpar o ecrã com a cor do céu ao pôr do sol
-        glClearColor(0.8156f, 0.4705f, 0.2823f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // Ativar shader
-        glUseProgram(shaderProgram);
-
-        // Matrizes da câmara e projeção
-        glm::mat4 view = camera.getViewMatrix();
-
-        float aspectRatio = 1.0f;
-
-        if (screenHeight > 0) {
-            aspectRatio =
-                static_cast<float>(screenWidth) /
-                static_cast<float>(screenHeight);
-        }
-
-        glm::mat4 projection = glm::perspective(glm::radians(60.0f), aspectRatio, 0.1f, 300.0f);
-
-        // Enviar view e projection ao shader
-        glUniformMatrix4fv(
-            viewLocation,
-            1,
-            GL_FALSE,
-            glm::value_ptr(view)
+        // Matrizes de transformação das casas
+        glm::mat4 modelHouse1 = glm::translate(
+            glm::mat4(1.0f),
+            glm::vec3(-3.0f, 0.0f, 0.0f)
         );
 
-        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
-        glm::mat4 modelGround = glm::mat4(1.0f);
+        glm::mat4 modelHouse2 = glm::translate(
+            glm::mat4(1.0f),
+            glm::vec3(3.0f, 0.0f, 0.0f)
+        );
 
-        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelGround));
+        glm::mat4 modelHouse3 = glm::translate(
+            glm::mat4(1.0f),
+            glm::vec3(9.0f, 0.0f, 0.0f)
+        );
 
-        glUniform3f(colorLocation, 0.3098f, 0.2352f, 0.1411f);
-        ground.draw();
+        glm::mat4 modelHouse4 = glm::translate(
+            glm::mat4(1.0f),
+            glm::vec3(-9.0f, 0.0f, 0.0f)
+        );
 
-        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse1));
-        house1.draw(colorLocation);
+        // Luz direcional.
+        glm::vec3 lightPosition(-6.0f, 12.0f, 8.0f);
+        glm::vec3 lightTarget(3.0f, 0.0f, 0.0f);
+        glm::mat4 lightProjection = glm::ortho(-18.0f, 18.0f, -18.0f, 18.0f, 1.0f, 50.0f);
+        glm::mat4 lightView = glm::lookAt(lightPosition, lightTarget, glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 
-        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse2));
-        house2.draw(colorLocation);
+        // Ciclo principal
+        while (!glfwWindowShouldClose(window)) {
+            float currentFrame = static_cast<float>(glfwGetTime());
 
-        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse3));
-        house2.draw(colorLocation);
+            deltaTime = currentFrame - lastFrame;
+            lastFrame = currentFrame;
 
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+            processInput(window);
+
+            if (shadowMap.isValid()) {
+                shadowMap.bindForWriting();
+
+                depthShader.use();
+
+                GLint depthModelLocation = glGetUniformLocation(depthShader.id(), "model");
+                GLint depthLightSpaceLocation = glGetUniformLocation(depthShader.id(), "lightSpaceMatrix");
+                glUniformMatrix4fv(depthLightSpaceLocation, 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+
+                glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(modelGround));
+                ground.draw();
+
+                glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse1));
+                house1.draw();
+
+                glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse2));
+                house2.draw();
+
+                glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse3));
+                house3.draw();
+
+                glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse4));
+                house4.draw();
+
+                // Voltar ao framebuffer padrão.
+                shadowMap.unbind();
+            }
+
+            glViewport(0, 0, screenWidth, screenHeight);
+            glClearColor(0.8156f, 0.4705f, 0.2823f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            shader.use();
+            glm::mat4 view = camera.getViewMatrix();
+
+            float aspectRatio = 1.0f;
+
+            if (screenHeight > 0)
+                aspectRatio = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
+
+            glm::mat4 projection = glm::perspective(glm::radians(60.0f), aspectRatio, 0.1f, 300.0f);
+
+            glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(view));
+
+            glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
+
+            glUniformMatrix4fv(lightSpaceLocation, 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+
+            // Disponibilizar o mapa de sombras ao fragment shader.
+            shadowMap.bindDepthTexture(0);
+
+            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelGround));
+            glUniform3f(colorLocation, 0.3098f, 0.2352f, 0.1411f);
+            ground.draw();
+
+            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse1));
+            house1.draw(colorLocation);
+
+            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse2));
+            house2.draw(colorLocation);
+
+            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse3));
+            house3.draw(colorLocation);
+
+            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse4));
+            house4.draw(colorLocation);
+
+            glfwSwapBuffers(window);
+            glfwPollEvents();
+        }
     }
-
-    glDeleteProgram(shaderProgram);
 
     glfwDestroyWindow(window);
     glfwTerminate();

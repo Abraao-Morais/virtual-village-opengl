@@ -61,6 +61,8 @@ add_executable(virtual-village-opengl
     src/camera.cpp
     src/ground.cpp
     src/house.cpp
+    src/shader.cpp
+    src/shadow_map.cpp
     ${GLAD_C_FILE}
 )
 
@@ -71,6 +73,10 @@ target_include_directories(virtual-village-opengl PRIVATE
     "${CMAKE_SOURCE_DIR}/src"
     "${glm_SOURCE_DIR}"
     "${stb_image_SOURCE_DIR}"
+)
+
+target_compile_definitions(virtual-village-opengl PRIVATE
+    VILLAGE_SHADER_DIR="${CMAKE_CURRENT_SOURCE_DIR}/shaders"
 )
 
 # Liga as bibliotecas necessárias

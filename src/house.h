@@ -8,6 +8,7 @@ public:
     House();
     ~House();
 
+    void draw() const;
     void draw(GLint colorLocation) const;
 
 private:
