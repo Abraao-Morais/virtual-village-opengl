@@ -21,21 +21,17 @@ Camera::Camera()
 void Camera::processKeyboard(int key, float deltaTime) {
     float velocity = movementSpeed * deltaTime;
 
-    if (key == GLFW_KEY_W) {
+    if (key == GLFW_KEY_W)
         position += front * velocity;
-    }
 
-    if (key == GLFW_KEY_S) {
+    if (key == GLFW_KEY_S)
         position -= front * velocity;
-    }
 
-    if (key == GLFW_KEY_A) {
+    if (key == GLFW_KEY_A)
         position -= right * velocity;
-    }
 
-    if (key == GLFW_KEY_D) {
+    if (key == GLFW_KEY_D)
         position += right * velocity;
-    }
 
     // Mantém a câmera na altura dos olhos.
     position.y = 1.7f;
@@ -68,31 +64,17 @@ void Camera::processMouse(double xpos, double ypos) {
 void Camera::updateCameraVectors() {
     glm::vec3 direction;
 
-    direction.x = cos(glm::radians(yaw))
-                * cos(glm::radians(pitch));
-
+    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
     direction.y = sin(glm::radians(pitch));
-
-    direction.z = sin(glm::radians(yaw))
-                * cos(glm::radians(pitch));
+    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 
     front = glm::normalize(direction);
-
-    right = glm::normalize(
-        glm::cross(front, worldUp)
-    );
-
-    up = glm::normalize(
-        glm::cross(right, front)
-    );
+    right = glm::normalize(glm::cross(front, worldUp));
+    up = glm::normalize(glm::cross(right, front));
 }
 
 glm::mat4 Camera::getViewMatrix() const {
-    return glm::lookAt(
-        position,
-        position + front,
-        up
-    );
+    return glm::lookAt(position, position + front, up);
 }
 
 glm::vec3 Camera::getPosition() const {

@@ -1,15 +1,12 @@
-
 #pragma once
 
 #include <glad/glad.h>
+#include <glm/glm.hpp>
 
 class House {
 public:
     House();
     ~House();
-
-    House(const House&) = delete;
-    House& operator=(const House&) = delete;
 
     void draw(GLint colorLocation) const;
 
@@ -25,7 +22,4 @@ private:
 
     GLint doorStart = 0;
     GLint doorCount = 0;
-
-    GLint windowsStart = 0;
-    GLint windowsCount = 0;
 };

@@ -27,53 +27,31 @@ int screenHeight = HEIGHT;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-// --------------------------------------------------
-// Callbacks
-// --------------------------------------------------
-
-void framebuffer_size_callback(
-    GLFWwindow* window,
-    int width,
-    int height
-) {
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     screenWidth = width;
     screenHeight = height;
-
     glViewport(0, 0, width, height);
 }
 
-void mouse_callback(
-    GLFWwindow* window,
-    double xpos,
-    double ypos
-) {
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     camera.processMouse(xpos, ypos);
 }
 
-// --------------------------------------------------
-// Input
-// --------------------------------------------------
-
 void processInput(GLFWwindow* window) {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-    }
 
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.processKeyboard(GLFW_KEY_W, deltaTime);
-    }
 
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
         camera.processKeyboard(GLFW_KEY_S, deltaTime);
-    }
 
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         camera.processKeyboard(GLFW_KEY_A, deltaTime);
-    }
 
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.processKeyboard(GLFW_KEY_D, deltaTime);
-    }
 }
 
 // --------------------------------------------------
@@ -111,22 +89,34 @@ GLuint createShaderProgram() {
 
     // Compilar vertex shader
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+
     glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
     glCompileShader(vertexShader);
 
     GLint success;
     GLchar infoLog[512];
 
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    glGetShaderiv(
+        vertexShader,
+        GL_COMPILE_STATUS,
+        &success
+    );
 
     if (!success) {
-        glGetShaderInfoLog(vertexShader, 512, nullptr, infoLog);
+        glGetShaderInfoLog(
+            vertexShader,
+            512,
+            nullptr,
+            infoLog
+        );
+
         std::cerr << "Erro no vertex shader:\n"
                   << infoLog << '\n';
     }
 
     // Compilar fragment shader
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+
     glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
     glCompileShader(fragmentShader);
 
@@ -134,6 +124,7 @@ GLuint createShaderProgram() {
 
     if (!success) {
         glGetShaderInfoLog(fragmentShader, 512, nullptr, infoLog);
+
         std::cerr << "Erro no fragment shader:\n"
                   << infoLog << '\n';
     }
@@ -144,11 +135,11 @@ GLuint createShaderProgram() {
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
-
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
 
     if (!success) {
         glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
+
         std::cerr << "Erro ao ligar shaders:\n"
                   << infoLog << '\n';
     }
@@ -172,10 +163,8 @@ int main() {
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    glfwWindowHint(
-        GLFW_OPENGL_PROFILE,
-        GLFW_OPENGL_CORE_PROFILE
-    );
+
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Criar janela
     window = glfwCreateWindow(
@@ -195,28 +184,21 @@ int main() {
     glfwMakeContextCurrent(window);
 
     // Inicializar GLAD
-    if (!gladLoadGLLoader(
-            (GLADloadproc)glfwGetProcAddress
-        )) {
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cerr << "Erro ao inicializar GLAD.\n";
+
         glfwDestroyWindow(window);
         glfwTerminate();
+
         return EXIT_FAILURE;
     }
 
-    glfwSetFramebufferSizeCallback(
-        window,
-        framebuffer_size_callback
-    );
-
+    // Configurar callbacks
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
 
     // Capturar o rato para controlar a câmara
-    glfwSetInputMode(
-        window,
-        GLFW_CURSOR,
-        GLFW_CURSOR_DISABLED
-    );
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // Configuração OpenGL
     glViewport(0, 0, WIDTH, HEIGHT);
@@ -227,87 +209,93 @@ int main() {
 
     // Criar objetos da cena
     Ground ground;
-    House house;
+
+    House house1;
+    House house2;
+    House house3;
+
+    // Obter localizações dos uniforms
+    glUseProgram(shaderProgram);
+
+    GLint modelLocation = glGetUniformLocation(shaderProgram, "model");
+    GLint viewLocation = glGetUniformLocation(shaderProgram, "view");
+    GLint projectionLocation = glGetUniformLocation(shaderProgram,"projection");
+    GLint colorLocation = glGetUniformLocation(shaderProgram, "groundColor");
+
+    // Matrizes de transformação das casas
+    glm::mat4 modelHouse1 = glm::translate(
+        glm::mat4(1.0f),
+        glm::vec3(-3.0f, 0.0f, 0.0f)
+    );
+
+    glm::mat4 modelHouse2 = glm::translate(
+        glm::mat4(1.0f),
+        glm::vec3(3.0f, 0.0f, 0.0f)
+    );
+
+    glm::mat4 modelHouse3 = glm::translate(
+        glm::mat4(1.0f),
+        glm::vec3(9.0f, 0.0f, 0.0f)
+    );
 
     // Ciclo principal
     while (!glfwWindowShouldClose(window)) {
-        float currentFrame = static_cast<float>(
-            glfwGetTime()
-        );
+        float currentFrame = static_cast<float>(glfwGetTime());
 
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
         processInput(window);
 
-        // Limpar o ecrã
-        glClearColor(0.53f, 0.81f, 0.92f, 1.0f);
-        glClear(
-            GL_COLOR_BUFFER_BIT |
-            GL_DEPTH_BUFFER_BIT
-        );
+        // Limpar o ecrã com a cor do céu ao pôr do sol
+        glClearColor(0.8156f, 0.4705f, 0.2823f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Ativar shader
         glUseProgram(shaderProgram);
 
-        // Matrizes da cena
-        glm::mat4 model = glm::mat4(1.0f);
+        // Matrizes da câmara e projeção
         glm::mat4 view = camera.getViewMatrix();
 
-        float aspectRatio = static_cast<float>(screenWidth) /
-                            static_cast<float>(screenHeight);
+        float aspectRatio = 1.0f;
 
-        glm::mat4 projection = glm::perspective(
-            glm::radians(60.0f),
-            aspectRatio,
-            0.1f,
-            300.0f
-        );
+        if (screenHeight > 0) {
+            aspectRatio =
+                static_cast<float>(screenWidth) /
+                static_cast<float>(screenHeight);
+        }
 
-        // Enviar matrizes ao shader
+        glm::mat4 projection = glm::perspective(glm::radians(60.0f), aspectRatio, 0.1f, 300.0f);
+
+        // Enviar view e projection ao shader
         glUniformMatrix4fv(
-            glGetUniformLocation(shaderProgram, "model"),
-            1,
-            GL_FALSE,
-            glm::value_ptr(model)
-        );
-
-        glUniformMatrix4fv(
-            glGetUniformLocation(shaderProgram, "view"),
+            viewLocation,
             1,
             GL_FALSE,
             glm::value_ptr(view)
         );
 
-        glUniformMatrix4fv(
-            glGetUniformLocation(shaderProgram, "projection"),
-            1,
-            GL_FALSE,
-            glm::value_ptr(projection)
-        );
+        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
+        glm::mat4 modelGround = glm::mat4(1.0f);
 
-        // Desenhar terreno
-        GLint colorLocation = glGetUniformLocation(
-            shaderProgram,
-            "groundColor"
-        );
+        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelGround));
 
-        glUniform3f(
-            colorLocation,
-            0.25f, 0.55f, 0.25f
-        );
-
+        glUniform3f(colorLocation, 0.3098f, 0.2352f, 0.1411f);
         ground.draw();
 
-        // Desenhar casa
-        house.draw(colorLocation);
+        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse1));
+        house1.draw(colorLocation);
 
-        // Apresentar o frame
+        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse2));
+        house2.draw(colorLocation);
+
+        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse3));
+        house2.draw(colorLocation);
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    // Libertar recursos
     glDeleteProgram(shaderProgram);
 
     glfwDestroyWindow(window);

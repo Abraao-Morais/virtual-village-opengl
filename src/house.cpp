@@ -47,17 +47,34 @@ namespace {
     }
 
     void addRoof() {
-        // Duas águas do telhado
-        addQuad(-1,2, 1.1f,  0,3, 1.1f,
-                 0,3,-1.1f, -1,2,-1.1f);
+    // Duas águas do telhado com beirais maiores
+    addQuad(
+         -1.4f, 1.7f,  1.4f,
+         0.0f, 3.0f,  1.0f,
+         0.0f, 3.0f, -1.0f,
+         -1.4f, 1.7f, -1.4f
+    );
 
-        addQuad( 0,3, 1.1f,  1,2, 1.1f,
-                 1,2,-1.1f,  0,3,-1.1f);
+    addQuad(
+         1.4f, 1.7f,  1.4f,
+         0.0f, 3.0f,  1.0f,
+         0.0f, 3.0f, -1.0f,
+         1.4f, 1.7f, -1.4f
+    );
 
-        // Triângulos da frente e de trás
-        addTriangle(-1,2,1.02f, 1,2,1.02f, 0,3,1.02f);
-        addTriangle( 1,2,-1.02f, -1,2,-1.02f, 0,3,-1.02f);
-    }
+    // Triângulos frontais e traseiros
+    addTriangle(
+        -1.4f, 1.7f, 1.4f,
+         1.4f, 1.7f, 1.4f,
+         0.0f, 3.0f, 1.0f
+    );
+
+    addTriangle(
+         1.4f, 1.7f, -1.4f,
+        -1.4f, 1.7f, -1.4f,
+         0.0f, 3.0f, -1.0f
+    );
+}
 
     void addDoor() {
         // Porta castanha na fachada frontal
@@ -65,20 +82,6 @@ namespace {
                  0.25f,0,1.025f,
                  0.25f,1.2f,1.025f,
                 -0.25f,1.2f,1.025f);
-    }
-
-    void addWindows() {
-        // Janela esquerda
-        addQuad(-0.8f,0.9f,1.025f,
-                -0.4f,0.9f,1.025f,
-                -0.4f,1.4f,1.025f,
-                -0.8f,1.4f,1.025f);
-
-        // Janela direita
-        addQuad(0.4f,0.9f,1.025f,
-                0.8f,0.9f,1.025f,
-                0.8f,1.4f,1.025f,
-                0.4f,1.4f,1.025f);
     }
 }
 
@@ -98,11 +101,6 @@ House::House() {
     addDoor();
     doorCount = vertexCount() - doorStart;
 
-    // Janelas
-    windowsStart = vertexCount();
-    addWindows();
-    windowsCount = vertexCount() - windowsStart;
-
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
 
@@ -116,10 +114,7 @@ House::House() {
         GL_STATIC_DRAW
     );
 
-    glVertexAttribPointer(
-        0, 3, GL_FLOAT, GL_FALSE,
-        3 * sizeof(float), nullptr
-    );
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
     glEnableVertexAttribArray(0);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -134,21 +129,14 @@ House::~House() {
 void House::draw(GLint colorLocation) const {
     glBindVertexArray(VAO);
 
-    // Paredes bege
-    glUniform3f(colorLocation, 0.82f, 0.72f, 0.55f);
+    glUniform3f(colorLocation, 0.5255f, 0.4784f, 0.4275f);
     glDrawArrays(GL_TRIANGLES, wallsStart, wallsCount);
 
-    // Telhado vermelho
-    glUniform3f(colorLocation, 0.65f, 0.12f, 0.10f);
+    glUniform3f(colorLocation, 0.2588f, 0.2431f, 0.2823f);
     glDrawArrays(GL_TRIANGLES, roofStart, roofCount);
 
-    // Porta castanha
-    glUniform3f(colorLocation, 0.30f, 0.14f, 0.06f);
+    glUniform3f(colorLocation, 0.2078f, 0.2f, 0.2274f);
     glDrawArrays(GL_TRIANGLES, doorStart, doorCount);
-
-    // Janelas azuis
-    glUniform3f(colorLocation, 0.25f, 0.65f, 0.90f);
-    glDrawArrays(GL_TRIANGLES, windowsStart, windowsCount);
 
     glBindVertexArray(0);
 }
