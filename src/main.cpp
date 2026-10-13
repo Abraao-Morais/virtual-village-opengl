@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <array>
 #include <string>
+#include <stdexcept>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -10,7 +11,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "skybox.h"
+#include "sky_sphere.h"
 #include "shadow_map.h"
 #include "shader.h"
 #include "camera.h"
@@ -105,201 +106,226 @@ int main() {
     glViewport(0, 0, WIDTH, HEIGHT);
     glEnable(GL_DEPTH_TEST);
 
-    const std::array<std::string, 6> skyboxFaces = {
-        std::string(VILLAGE_TEXTURE_DIR) + "/skybox/right.jpg",
-        std::string(VILLAGE_TEXTURE_DIR) + "/skybox/left.jpg",
-        std::string(VILLAGE_TEXTURE_DIR) + "/skybox/top.jpg",
-        std::string(VILLAGE_TEXTURE_DIR) + "/skybox/bottom.jpg",
-        std::string(VILLAGE_TEXTURE_DIR) + "/skybox/front.jpg",
-        std::string(VILLAGE_TEXTURE_DIR) + "/skybox/back.jpg"
-    };
+    Shader shader(VILLAGE_SHADER_DIR "/basic.vert", VILLAGE_SHADER_DIR"/basic.frag");
+    Shader depthShader(VILLAGE_SHADER_DIR "/shadow_depth.vert", VILLAGE_SHADER_DIR "/shadow_depth.frag");
+    Shader skyShader(VILLAGE_SHADER_DIR "/sky_sphere.vert", VILLAGE_SHADER_DIR "/sky_sphere.frag");
 
-    Skybox skybox(
-        skyboxFaces,
-        VILLAGE_SHADER_DIR "/skybox.vert",
-        VILLAGE_SHADER_DIR "/skybox.frag"
+    SkySphere sky;
+    sky.create(100.0f, 64, 32);
+
+    if (!sky.loadTexture("../assets/skybox/TychoSkymapII.t5_08192x04096.jpeg")){
+        std::cerr << "Nao foi possivel carregar a textura do ceu.\n";
+        sky.cleanup();
+        glfwDestroyWindow(window);
+        glfwTerminate();
+
+        return EXIT_FAILURE;
+    }
+
+    ShadowMap shadowMap;
+
+    Ground ground;
+
+    House house1;
+    House house2;
+    House house3;
+    House house4;
+
+    Windmill windmill;
+
+    shader.use();
+    GLuint shaderProgram = shader.id();
+    GLint modelLocation = glGetUniformLocation(shaderProgram, "model");
+    GLint viewLocation = glGetUniformLocation(shaderProgram, "view");
+    GLint projectionLocation = glGetUniformLocation(shaderProgram,"projection");
+    GLint colorLocation = glGetUniformLocation(shaderProgram, "groundColor");
+    GLint lightSpaceLocation = glGetUniformLocation(shaderProgram, "lightSpaceMatrix");
+    GLint shadowMapLocation = glGetUniformLocation(shaderProgram, "shadowMap");
+
+    glUniform1i(shadowMapLocation, 0);
+
+    glm::mat4 modelGround(1.0f);
+
+    glm::mat4 modelHouse1 = glm::translate(
+        glm::mat4(1.0f),
+        glm::vec3(-3.0f, 0.0f, 0.0f)
     );
 
-    {
-        Shader shader(VILLAGE_SHADER_DIR "/basic.vert", VILLAGE_SHADER_DIR"/basic.frag");
-        Shader depthShader(VILLAGE_SHADER_DIR "/shadow_depth.vert", VILLAGE_SHADER_DIR "/shadow_depth.frag");
+    glm::mat4 modelHouse2 = glm::translate(
+        glm::mat4(1.0f),
+        glm::vec3(-9.0f, 0.0f, 0.0f)
+    );
 
-        ShadowMap shadowMap;
+    glm::mat4 modelHouse3 = glm::translate(
+        glm::mat4(1.0f),
+        glm::vec3(3.0f, 0.0f, 0.0f)
+    );
 
-        // Criar objetos da cena
-        Ground ground;
-        House house1;
-        House house2;
-        House house3;
-        House house4;
+    glm::mat4 modelHouse4 = glm::translate(
+        glm::mat4(1.0f),
+        glm::vec3(9.0f, 0.0f, 0.0f)
+    );
 
-        Windmill windmill;
+    // Matrizes de transformação dos moinhos
+    glm::mat4 modelWindmill = glm::translate(
+        glm::mat4(1.0f),
+        glm::vec3(0.0f, 0.0f, -6.0f)
+    );
 
-        shader.use();
-        GLuint shaderProgram = shader.id();
-
-        GLint modelLocation = glGetUniformLocation(shaderProgram, "model");
-        GLint viewLocation = glGetUniformLocation(shaderProgram, "view");
-        GLint projectionLocation = glGetUniformLocation(shaderProgram,"projection");
-        GLint colorLocation = glGetUniformLocation(shaderProgram, "groundColor");
-        GLint lightSpaceLocation = glGetUniformLocation(shaderProgram, "lightSpaceMatrix");
-        GLint shadowMapLocation = glGetUniformLocation(shaderProgram, "shadowMap");
-
-        // A textura de sombras será vinculada à unidade 0.
-        glUniform1i(shadowMapLocation, 0);
-
-        glm::mat4 modelGround(1.0f);
-
-        // Matrizes de transformação das casas
-        glm::mat4 modelHouse1 = glm::translate(
-            glm::mat4(1.0f),
-            glm::vec3(-3.0f, 0.0f, 0.0f)
+    glm::mat4 rotorModel = glm::translate(
+            modelWindmill,
+            glm::vec3(0.0f, 7.0f, 2.6f)
         );
 
-        glm::mat4 modelHouse2 = glm::translate(
-            glm::mat4(1.0f),
-            glm::vec3(-9.0f, 0.0f, 0.0f)
-        );
+    float bladeAngle = 0.0f;
+    const float rotationSpeed = glm::radians(7.0f);
 
-        glm::mat4 modelHouse3 = glm::translate(
-            glm::mat4(1.0f),
-            glm::vec3(3.0f, 0.0f, 0.0f)
-        );
-
-        glm::mat4 modelHouse4 = glm::translate(
-            glm::mat4(1.0f),
-            glm::vec3(9.0f, 0.0f, 0.0f)
-        );
-
-        // Matrizes de transformação dos moinhos
-        glm::mat4 modelWindmill = glm::translate(
-            glm::mat4(1.0f),
-            glm::vec3(0.0f, 0.0f, -6.0f)
-        );
-
-        glm::mat4 rotorModel = glm::translate(
-                modelWindmill,
-                glm::vec3(0.0f, 7.0f, 2.6f)
-            );
-
-        float bladeAngle = 0.0f;
-        const float rotationSpeed = glm::radians(7.0f);
-
-        // Luz direcional.
-        glm::vec3 lightPosition(-6.0f, 12.0f, 8.0f);
-        glm::vec3 lightTarget(3.0f, 0.0f, 0.0f);
-        glm::mat4 lightProjection = glm::ortho(-18.0f, 18.0f, -18.0f, 18.0f, 1.0f, 50.0f);
-        glm::mat4 lightView = glm::lookAt(lightPosition, lightTarget, glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+    // Luz direcional.
+    glm::vec3 lightPosition(-6.0f, 12.0f, 8.0f);
+    glm::vec3 lightTarget(3.0f, 0.0f, 0.0f);
+    glm::mat4 lightProjection = glm::ortho(-18.0f, 18.0f, -18.0f, 18.0f, 1.0f, 50.0f);
+    glm::mat4 lightView = glm::lookAt(lightPosition, lightTarget, glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 
         // Ciclo principal
-        while (!glfwWindowShouldClose(window)) {
-            float currentFrame = glfwGetTime();
-            deltaTime = currentFrame - lastFrame;
-            lastFrame = currentFrame;
+    while (!glfwWindowShouldClose(window)) {
+        float currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
 
-            processInput(window);
+        processInput(window);
 
-            bladeAngle += rotationSpeed * deltaTime;
+        bladeAngle += rotationSpeed * deltaTime;
 
-            rotorModel = glm::translate(
-                modelWindmill,
-                glm::vec3(0.0f, 7.0f, 2.6f)
-            );
+        rotorModel = glm::translate(
+            modelWindmill,
+            glm::vec3(0.0f, 7.0f, 2.6f)
+        );
 
-            rotorModel = glm::rotate(
-                rotorModel,
-                bladeAngle,
-                glm::vec3(0.0f, 0.0f, 1.0f)
-            );
+        rotorModel = glm::rotate(
+            rotorModel,
+            bladeAngle,
+            glm::vec3(0.0f, 0.0f, 1.0f)
+        );
 
-            processInput(window);
+        glm::mat4 view = camera.getViewMatrix();
 
-            if (shadowMap.isValid()) {
-                shadowMap.bindForWriting();
+        float aspectRatio = 1.0f;
 
-                depthShader.use();
+        if (screenHeight > 0)
+            aspectRatio = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
 
-                GLint depthModelLocation = glGetUniformLocation(depthShader.id(), "model");
-                GLint depthLightSpaceLocation = glGetUniformLocation(depthShader.id(), "lightSpaceMatrix");
-                glUniformMatrix4fv(depthLightSpaceLocation, 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+         glm::mat4 projection = glm::perspective(glm::radians(60.0f), aspectRatio, 0.1f, 300.0f);
 
-                glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(modelGround));
-                ground.draw();
 
-                glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse1));
-                house1.draw();
+        if (shadowMap.isValid()) {
+            shadowMap.bindForWriting();
 
-                glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse2));
-                house2.draw();
+            depthShader.use();
 
-                glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse3));
-                house3.draw();
+            GLint depthModelLocation = glGetUniformLocation(depthShader.id(), "model");
+            GLint depthLightSpaceLocation = glGetUniformLocation(depthShader.id(), "lightSpaceMatrix");
+            glUniformMatrix4fv(depthLightSpaceLocation, 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
 
-                glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse4));
-                house4.draw();
-
-                glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(modelWindmill));
-                windmill.draw();
-
-                glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(rotorModel));
-                windmill.drawBlades();
-
-                // Voltar ao framebuffer padrão.
-                shadowMap.unbind();
-            }
-
-            glViewport(0, 0, screenWidth, screenHeight);
-            glClearColor(0.8156f, 0.4705f, 0.2823f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            shader.use();
-            glm::mat4 view = camera.getViewMatrix();
-
-            float aspectRatio = 1.0f;
-
-            if (screenHeight > 0)
-                aspectRatio = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
-
-            glm::mat4 projection = glm::perspective(glm::radians(60.0f), aspectRatio, 0.1f, 300.0f);
-
-            glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(view));
-
-            glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
-
-            glUniformMatrix4fv(lightSpaceLocation, 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
-
-            // Disponibilizar o mapa de sombras ao fragment shader.
-            shadowMap.bindDepthTexture(0);
-
-            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelGround));
-            glUniform3f(colorLocation, 0.3098f, 0.2352f, 0.1411f);
+            glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(modelGround));
             ground.draw();
 
-            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse1));
-            house1.draw(colorLocation);
+            glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse1));
+            house1.draw();
 
-            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse2));
-            house2.draw(colorLocation);
+            glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse2));
+            house2.draw();
 
-            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse3));
-            house3.draw(colorLocation);
+            glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse3));
+            house3.draw();
 
-            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse4));
-            house4.draw(colorLocation);
+            glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse4));
+            house4.draw();
 
-            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelWindmill));
-            windmill.draw(colorLocation);
+            glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(modelWindmill));
+            windmill.draw();
 
-            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(rotorModel));
-            windmill.drawBlades(colorLocation);
+            glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(rotorModel));
+            windmill.drawBlades();
 
-            skybox.draw(view, projection);
-
-            glfwSwapBuffers(window);
-            glfwPollEvents();
+            // Voltar ao framebuffer padrão.
+            shadowMap.unbind();
         }
+
+        glViewport(0, 0, screenWidth, screenHeight);
+        glClearColor(0.8156f, 0.4705f, 0.2823f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glDepthFunc(GL_LEQUAL);
+        glDepthMask(GL_FALSE);
+
+        // A esfera e vista por dentro.
+        glDisable(GL_CULL_FACE);
+        skyShader.use();
+
+        // Obter os identificadores dos uniforms.
+        GLint skyViewLocation = glGetUniformLocation(skyShader.id(), "view");
+        GLint skyProjectionLocation = glGetUniformLocation(skyShader.id(), "projection");
+        GLint skyTextureLocation = glGetUniformLocation(skyShader.id(), "skyTexture");
+
+        // Enviar as matrizes para o shader.
+        glUniformMatrix4fv(skyViewLocation, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(skyProjectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
+
+        // Vincular a textura do céu à unidade 0.
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, sky.texture);
+
+        glUniform1i(skyTextureLocation, 0);
+
+        // Desenhar a esfera.
+        sky.draw();
+
+        // Restaurar o estado de profundidade.
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LESS);
+
+        // O restante da cena usa o estado habitual.
+        glDisable(GL_CULL_FACE);
+
+        shader.use();
+
+        glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(view));
+
+        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
+
+        glUniformMatrix4fv(lightSpaceLocation, 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+
+        // Disponibilizar o mapa de sombras ao fragment shader.
+        shadowMap.bindDepthTexture(0);
+
+        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelGround));
+        glUniform3f(colorLocation, 0.3098f, 0.2352f, 0.1411f);
+        ground.draw();
+
+        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse1));
+        house1.draw(colorLocation);
+
+        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse2));
+        house2.draw(colorLocation);
+
+        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse3));
+        house3.draw(colorLocation);
+
+        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse4));
+        house4.draw(colorLocation);
+
+        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelWindmill));
+        windmill.draw(colorLocation);
+
+        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(rotorModel));
+        windmill.drawBlades(colorLocation);
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
     }
+
+    sky.cleanup();
 
     glfwDestroyWindow(window);
     glfwTerminate();

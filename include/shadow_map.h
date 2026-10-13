@@ -14,13 +14,10 @@ public:
     ShadowMap(const ShadowMap&) = delete;
     ShadowMap& operator=(const ShadowMap&) = delete;
 
-    // Inicia a renderização do mapa de profundidade.
     void bindForWriting() const;
 
-    // Volta ao framebuffer padrão.
     void unbind() const;
 
-    // Disponibiliza a textura de profundidade.
     void bindDepthTexture(GLuint textureUnit = 0) const;
 
     GLuint getDepthTexture() const;

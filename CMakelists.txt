@@ -64,7 +64,6 @@ add_executable(virtual-village-opengl
     src/windmill.cpp
     src/shader.cpp
     src/shadow_map.cpp
-    src/skybox.cpp
     ${GLAD_C_FILE}
 )
 
@@ -79,7 +78,6 @@ target_include_directories(virtual-village-opengl PRIVATE
 
 target_compile_definitions(virtual-village-opengl PRIVATE
     VILLAGE_SHADER_DIR="${CMAKE_CURRENT_SOURCE_DIR}/shaders"
-    VILLAGE_TEXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/textures"
 )
 
 # Liga as bibliotecas necessárias
