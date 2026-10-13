@@ -1,5 +1,7 @@
 #include <iostream>
 #include <cstdlib>
+#include <array>
+#include <string>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -8,6 +10,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "skybox.h"
 #include "shadow_map.h"
 #include "shader.h"
 #include "camera.h"
@@ -101,6 +104,21 @@ int main() {
     // Configuração OpenGL
     glViewport(0, 0, WIDTH, HEIGHT);
     glEnable(GL_DEPTH_TEST);
+
+    const std::array<std::string, 6> skyboxFaces = {
+        std::string(VILLAGE_TEXTURE_DIR) + "/skybox/right.jpg",
+        std::string(VILLAGE_TEXTURE_DIR) + "/skybox/left.jpg",
+        std::string(VILLAGE_TEXTURE_DIR) + "/skybox/top.jpg",
+        std::string(VILLAGE_TEXTURE_DIR) + "/skybox/bottom.jpg",
+        std::string(VILLAGE_TEXTURE_DIR) + "/skybox/front.jpg",
+        std::string(VILLAGE_TEXTURE_DIR) + "/skybox/back.jpg"
+    };
+
+    Skybox skybox(
+        skyboxFaces,
+        VILLAGE_SHADER_DIR "/skybox.vert",
+        VILLAGE_SHADER_DIR "/skybox.frag"
+    );
 
     {
         Shader shader(VILLAGE_SHADER_DIR "/basic.vert", VILLAGE_SHADER_DIR"/basic.frag");
@@ -275,6 +293,8 @@ int main() {
 
             glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(rotorModel));
             windmill.drawBlades(colorLocation);
+
+            skybox.draw(view, projection);
 
             glfwSwapBuffers(window);
             glfwPollEvents();
