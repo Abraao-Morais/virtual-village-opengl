@@ -13,19 +13,17 @@
 #include "camera.h"
 #include "ground.h"
 #include "house.h"
+#include "windmill.h"
 
-// Dimensões iniciais da janela
 const unsigned int WIDTH = 800;
 const unsigned int HEIGHT = 600;
 
-// Janela e câmara
 GLFWwindow* window = nullptr;
 Camera camera;
 
 int screenWidth = WIDTH;
 int screenHeight = HEIGHT;
 
-// Controlo do tempo
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
@@ -106,7 +104,7 @@ int main() {
 
     {
         Shader shader(VILLAGE_SHADER_DIR "/basic.vert", VILLAGE_SHADER_DIR"/basic.frag");
-        Shader depthShader(VILLAGE_SHADER_DIR "/shadow.depth.vert", VILLAGE_SHADER_DIR "/shadow.depth.frag");
+        Shader depthShader(VILLAGE_SHADER_DIR "/shadow_depth.vert", VILLAGE_SHADER_DIR "/shadow_depth.frag");
 
         ShadowMap shadowMap;
 
@@ -116,6 +114,8 @@ int main() {
         House house2;
         House house3;
         House house4;
+
+        Windmill windmill;
 
         shader.use();
         GLuint shaderProgram = shader.id();
@@ -140,18 +140,32 @@ int main() {
 
         glm::mat4 modelHouse2 = glm::translate(
             glm::mat4(1.0f),
-            glm::vec3(3.0f, 0.0f, 0.0f)
+            glm::vec3(-9.0f, 0.0f, 0.0f)
         );
 
         glm::mat4 modelHouse3 = glm::translate(
             glm::mat4(1.0f),
-            glm::vec3(9.0f, 0.0f, 0.0f)
+            glm::vec3(3.0f, 0.0f, 0.0f)
         );
 
         glm::mat4 modelHouse4 = glm::translate(
             glm::mat4(1.0f),
-            glm::vec3(-9.0f, 0.0f, 0.0f)
+            glm::vec3(9.0f, 0.0f, 0.0f)
         );
+
+        // Matrizes de transformação dos moinhos
+        glm::mat4 modelWindmill = glm::translate(
+            glm::mat4(1.0f),
+            glm::vec3(0.0f, 0.0f, -6.0f)
+        );
+
+        glm::mat4 rotorModel = glm::translate(
+                modelWindmill,
+                glm::vec3(0.0f, 7.0f, 2.6f)
+            );
+
+        float bladeAngle = 0.0f;
+        const float rotationSpeed = glm::radians(7.0f);
 
         // Luz direcional.
         glm::vec3 lightPosition(-6.0f, 12.0f, 8.0f);
@@ -162,10 +176,24 @@ int main() {
 
         // Ciclo principal
         while (!glfwWindowShouldClose(window)) {
-            float currentFrame = static_cast<float>(glfwGetTime());
-
+            float currentFrame = glfwGetTime();
             deltaTime = currentFrame - lastFrame;
             lastFrame = currentFrame;
+
+            processInput(window);
+
+            bladeAngle += rotationSpeed * deltaTime;
+
+            rotorModel = glm::translate(
+                modelWindmill,
+                glm::vec3(0.0f, 7.0f, 2.6f)
+            );
+
+            rotorModel = glm::rotate(
+                rotorModel,
+                bladeAngle,
+                glm::vec3(0.0f, 0.0f, 1.0f)
+            );
 
             processInput(window);
 
@@ -192,6 +220,12 @@ int main() {
 
                 glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse4));
                 house4.draw();
+
+                glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(modelWindmill));
+                windmill.draw();
+
+                glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(rotorModel));
+                windmill.drawBlades();
 
                 // Voltar ao framebuffer padrão.
                 shadowMap.unbind();
@@ -235,6 +269,12 @@ int main() {
 
             glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelHouse4));
             house4.draw(colorLocation);
+
+            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelWindmill));
+            windmill.draw(colorLocation);
+
+            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(rotorModel));
+            windmill.drawBlades(colorLocation);
 
             glfwSwapBuffers(window);
             glfwPollEvents();
