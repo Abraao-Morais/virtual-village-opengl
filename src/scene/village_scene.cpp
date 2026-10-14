@@ -4,6 +4,8 @@
 #include "rendering/shaders_utils.h"
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/constants.hpp>
+#include <cmath>
 
 using SceneTransforms::createModel;
 
@@ -67,6 +69,14 @@ VillageScene::VillageScene():
 void VillageScene::update(float deltaTime) {
     bladeAngle += rotationSpeed * deltaTime;
     updateRotorModel();
+
+    if (gravestoneSwingActive) {
+        gravestoneSwingElapsed += deltaTime;
+        if (gravestoneSwingElapsed >= GRAVESTONE_SWING_DURATION) {
+            gravestoneSwingElapsed = GRAVESTONE_SWING_DURATION;
+            gravestoneSwingActive = false;
+        }
+    }
 }
 
 void VillageScene::updateRotorModel() {
@@ -105,7 +115,8 @@ void VillageScene::draw(GLint modelLocation, GLint colorLocation){
     church.draw(colorLocation);
 
     // Lápides
-    for (const auto& model : graveStonesModels){
+    for (std::size_t i = 0; i < graveStonesModels.size(); ++i) {
+        const glm::mat4 model = getGravestoneModel(i);
         ShaderUtils::setMat4(modelLocation, model);
         gravestone.draw(colorLocation);
     }
@@ -146,8 +157,10 @@ void VillageScene::drawShadow(GLint modelLocation, GLint lightSpaceLocation, con
     ShaderUtils::setMat4(modelLocation, modelChurch);
     church.draw();
 
-    // Lápides
-    for (const auto& model : graveStonesModels){
+    // Lápides — mesmas transformações da renderização normal
+    for (std::size_t i = 0; i < graveStonesModels.size(); ++i) {
+        const glm::mat4 model = getGravestoneModel(i);
+
         ShaderUtils::setMat4(modelLocation, model);
         gravestone.draw();
     }
@@ -155,4 +168,24 @@ void VillageScene::drawShadow(GLint modelLocation, GLint lightSpaceLocation, con
      // Abobora
     ShaderUtils::setMat4(modelLocation, modelPumpkin);
     pumpkin.draw();
+}
+
+void VillageScene::triggerGravestoneSwing() {
+    if (gravestoneSwingActive) return;
+    gravestoneSwingElapsed = 0.0f;
+    gravestoneSwingActive = true;
+}
+
+glm::mat4 VillageScene::getGravestoneModel(std::size_t index) const {
+    const glm::mat4& baseModel = graveStonesModels[index];
+
+    if (index != ANIMATED_GRAVESTONE || !gravestoneSwingActive) return baseModel;
+
+    const float t = glm::clamp(gravestoneSwingElapsed / GRAVESTONE_SWING_DURATION, 0.0f, 1.0f);
+    const float envelope = std::sin(glm::pi<float>() * t);
+    const float oscillation = std::sin(4.0f * glm::pi<float>() * t);
+    const float angle = GRAVESTONE_MAX_ANGLE * envelope * oscillation;
+    const glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 0.0f, 1.0f));
+
+    return baseModel * rotation;
 }

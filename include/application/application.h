@@ -51,4 +51,6 @@ class Application {
         void renderMinimap(const glm::mat4& lightSpaceMatrix, GLint modelLocation, GLint viewLocation, GLint projectionLocation, GLint colorLocation, GLint lightSpaceLocation);
         static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
         static void mouseCallback(GLFWwindow* window, double xpos, double ypos);
+
+        bool gWasPressed = false;
 };

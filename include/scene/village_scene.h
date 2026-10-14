@@ -18,14 +18,10 @@ class VillageScene {
         VillageScene();
 
         void update(float deltaTime);
+        void triggerGravestoneSwing();
 
         void draw(GLint modelLocation, GLint colorLocation);
-
-        void drawShadow(
-            GLint modelLocation,
-            GLint lightSpaceLocation,
-            const glm::mat4& lightSpaceMatrix
-        );
+        void drawShadow(GLint modelLocation, GLint lightSpaceLocation, const glm::mat4& lightSpaceMatrix);
 
     private:
         Ground ground;
@@ -49,6 +45,12 @@ class VillageScene {
 
         Gravestone gravestone;
         std::array<glm::mat4, 16> graveStonesModels;
+        static constexpr std::size_t ANIMATED_GRAVESTONE = 0;
+        static constexpr float GRAVESTONE_SWING_DURATION = 1.0f;
+        static constexpr float GRAVESTONE_MAX_ANGLE = 0.20943951f;
+        bool gravestoneSwingActive = false;
+        float gravestoneSwingElapsed = 0.0f;
+        glm::mat4 getGravestoneModel(std::size_t index) const;
 
         Pumpkin pumpkin;
         glm::mat4 modelPumpkin;

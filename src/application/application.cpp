@@ -132,6 +132,11 @@ void Application::processInput() {
         if (glfwGetKey(window, key) == GLFW_PRESS)
             camera.processKeyboard(key, deltaTime);
     }
+
+    const bool gIsPressed = glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS;
+
+    if (gIsPressed && !gWasPressed)village->triggerGravestoneSwing();
+    gWasPressed = gIsPressed;
 }
 
 void Application::run() {
