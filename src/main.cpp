@@ -18,6 +18,7 @@
 #include "ground.h"
 #include "house.h"
 #include "windmill.h"
+#include "tower.h"
 
 const unsigned int WIDTH = 800;
 const unsigned int HEIGHT = 600;
@@ -58,10 +59,6 @@ void processInput(GLFWwindow* window) {
         camera.processKeyboard(GLFW_KEY_D, deltaTime);
 }
 
-// --------------------------------------------------
-// Main
-// --------------------------------------------------
-
 int main() {
     // Inicializar GLFW
     if (!glfwInit()) {
@@ -71,10 +68,8 @@ int main() {
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    // Criar janela
     window = glfwCreateWindow(WIDTH, HEIGHT, "Virtual Village - OpenGL", nullptr, nullptr);
 
     if (!window) {
@@ -95,11 +90,8 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    // Configurar callbacks
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
-
-    // Capturar o rato para controlar a câmara
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // Configuração OpenGL
@@ -113,15 +105,6 @@ int main() {
     SkySphere sky;
     sky.create(100.0f, 64, 32);
 
-    if (!sky.loadTexture("../assets/skybox/TychoSkymapII.t5_08192x04096.jpeg")){
-        std::cerr << "Nao foi possivel carregar a textura do ceu.\n";
-        sky.cleanup();
-        glfwDestroyWindow(window);
-        glfwTerminate();
-
-        return EXIT_FAILURE;
-    }
-
     ShadowMap shadowMap;
 
     Ground ground;
@@ -132,6 +115,9 @@ int main() {
     House house4;
 
     Windmill windmill;
+
+    Tower tower1;
+    Tower tower2;
 
     shader.use();
     GLuint shaderProgram = shader.id();
@@ -146,39 +132,19 @@ int main() {
 
     glm::mat4 modelGround(1.0f);
 
-    glm::mat4 modelHouse1 = glm::translate(
-        glm::mat4(1.0f),
-        glm::vec3(-3.0f, 0.0f, 0.0f)
-    );
+    glm::mat4 modelHouse1 = glm::translate(glm::mat4(1.0f), glm::vec3(-3.0f, 0.0f, 0.0f));
+    glm::mat4 modelHouse2 = glm::translate(glm::mat4(1.0f), glm::vec3(-9.0f, 0.0f, 0.0f));
+    glm::mat4 modelHouse3 = glm::translate(glm::mat4(1.0f), glm::vec3(3.0f, 0.0f, 0.0f));
+    glm::mat4 modelHouse4 = glm::translate(glm::mat4(1.0f), glm::vec3(9.0f, 0.0f, 0.0f));
 
-    glm::mat4 modelHouse2 = glm::translate(
-        glm::mat4(1.0f),
-        glm::vec3(-9.0f, 0.0f, 0.0f)
-    );
-
-    glm::mat4 modelHouse3 = glm::translate(
-        glm::mat4(1.0f),
-        glm::vec3(3.0f, 0.0f, 0.0f)
-    );
-
-    glm::mat4 modelHouse4 = glm::translate(
-        glm::mat4(1.0f),
-        glm::vec3(9.0f, 0.0f, 0.0f)
-    );
-
-    // Matrizes de transformação dos moinhos
-    glm::mat4 modelWindmill = glm::translate(
-        glm::mat4(1.0f),
-        glm::vec3(0.0f, 0.0f, -6.0f)
-    );
-
-    glm::mat4 rotorModel = glm::translate(
-            modelWindmill,
-            glm::vec3(0.0f, 7.0f, 2.6f)
-        );
+    glm::mat4 modelWindmill = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -6.0f));
+    glm::mat4 rotorModel = glm::translate(modelWindmill, glm::vec3(0.0f, 7.0f, 2.6f));
 
     float bladeAngle = 0.0f;
     const float rotationSpeed = glm::radians(7.0f);
+
+    glm::mat4 modelTower1 = glm::translate(glm::mat4(1.0f), glm::vec3(50.0f, 0.0f, -8.0f));
+    glm::mat4 modelTower2 = glm::translate(glm::mat4(1.0f), glm::vec3(50.0f, 0.0f, 8.0f));
 
     // Luz direcional.
     glm::vec3 lightPosition(-6.0f, 12.0f, 8.0f);
@@ -187,7 +153,6 @@ int main() {
     glm::mat4 lightView = glm::lookAt(lightPosition, lightTarget, glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 
-        // Ciclo principal
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
@@ -196,17 +161,8 @@ int main() {
         processInput(window);
 
         bladeAngle += rotationSpeed * deltaTime;
-
-        rotorModel = glm::translate(
-            modelWindmill,
-            glm::vec3(0.0f, 7.0f, 2.6f)
-        );
-
-        rotorModel = glm::rotate(
-            rotorModel,
-            bladeAngle,
-            glm::vec3(0.0f, 0.0f, 1.0f)
-        );
+        rotorModel = glm::translate(modelWindmill, glm::vec3(0.0f, 7.0f, 2.6f));
+        rotorModel = glm::rotate(rotorModel, bladeAngle,glm::vec3(0.0f, 0.0f, 1.0f));
 
         glm::mat4 view = camera.getViewMatrix();
 
@@ -247,6 +203,12 @@ int main() {
 
             glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(rotorModel));
             windmill.drawBlades();
+
+            glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(modelTower1));
+            tower1.draw();
+
+            glUniformMatrix4fv(depthModelLocation, 1, GL_FALSE, glm::value_ptr(modelTower2));
+            tower2.draw();
 
             // Voltar ao framebuffer padrão.
             shadowMap.unbind();
@@ -320,6 +282,12 @@ int main() {
 
         glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(rotorModel));
         windmill.drawBlades(colorLocation);
+
+        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelTower1));
+        tower1.draw(colorLocation);
+
+        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(modelTower2));
+        tower2.draw(colorLocation);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

@@ -1,44 +1,20 @@
 #include "windmill.h"
 
+#include "mesh_utils.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <array>
 #include <cmath>
 #include <vector>
 
+using MeshUtils::addTriangle;
+using MeshUtils::addQuad;
+using MeshUtils::calculateOctagon;
+using MeshUtils::vertexCount;
+
 namespace {
     std::vector<float> vertices;
-
     constexpr int SIDES = 8;
-    constexpr float PI = 3.14159265358979323846f;
-
-    std::array<glm::vec2, SIDES> calculateOctagon(float centerX,float centerZ, float radius, float startAngle = 0.0f) {
-        std::array<glm::vec2, SIDES> points;
-
-        for (int i = 0; i < SIDES; ++i) {
-            float angle = startAngle + (2.0f * PI * i / SIDES);
-            points[i] = glm::vec2(centerX + radius * std::cos(angle), centerZ + radius * std::sin(angle));
-        }
-
-        return points;
-    }
-
-    void addTriangle(float ax, float ay, float az, float bx, float by, float bz, float cx, float cy, float cz) {
-        vertices.insert(vertices.end(), {
-            ax, ay, az,
-            bx, by, bz,
-            cx, cy, cz
-        });
-    }
-
-    void addQuad(float ax, float ay, float az, float bx, float by, float bz, float cx, float cy, float cz, float dx, float dy, float dz) {
-        addTriangle(ax, ay, az, bx, by, bz, cx, cy, cz);
-        addTriangle(ax, ay, az, cx, cy, cz, dx, dy, dz);
-    }
-
-    GLint vertexCount() {
-        return static_cast<GLint>(vertices.size() / 3);
-    }
 
     void addWalls(float height, float radius) {
         auto points = calculateOctagon(0.0f, 0.0f, radius);
@@ -57,7 +33,7 @@ namespace {
             float superiorx2 = superiorPoints[next].x;
             float superiorz2 = superiorPoints[next].y;
 
-            addQuad(
+            addQuad(vertices,
                 x1, 0.0f, z1,
                 x2, 0.0f, z2,
                 superiorx2, height, superiorz2,
@@ -78,7 +54,7 @@ namespace {
             float x2 = points[next].x;
             float z2 = points[next].y;
 
-            addTriangle(
+            addTriangle(vertices,
                 x1, height - 0.3f, z1,
                 x2, height - 0.3f, z2,
                 0.0f, height + 2.5f, 0.0f
@@ -103,7 +79,7 @@ namespace {
         glm::vec3 c = transform( halfWidth, outerRadius);
         glm::vec3 d = transform(-halfWidth, outerRadius);
 
-        addQuad(
+        addQuad(vertices,
             a.x, a.y, a.z,
             b.x, b.y, b.z,
             c.x, c.y, c.z,
@@ -118,17 +94,17 @@ namespace {
 }
 
 Windmill::Windmill() {
-    wallsStart = vertexCount();
+    wallsStart = vertexCount(vertices);
     addWalls(9.0f, 3.0f);
-    wallsCount = vertexCount() - wallsStart;
+    wallsCount = vertexCount(vertices) - wallsStart;
 
-    roofStart = vertexCount();
+    roofStart = vertexCount(vertices);
     addRoof(9.0f, 3.0f);
-    roofCount = vertexCount() - roofStart;
+    roofCount = vertexCount(vertices) - roofStart;
 
-    bladesStart = vertexCount();
+    bladesStart = vertexCount(vertices);
     addBlades();
-    bladesCount = vertexCount() - bladesStart;
+    bladesCount = vertexCount(vertices) - bladesStart;
 
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);

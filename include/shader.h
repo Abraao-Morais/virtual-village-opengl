@@ -6,20 +6,20 @@
 #include <string>
 
 class Shader {
-public:
-    Shader(const std::string& vertexPath, const std::string& fragmentPath);
+    public:
+        Shader(const std::string& vertexPath, const std::string& fragmentPath);
 
-    ~Shader();
+        ~Shader();
 
-    Shader(const Shader&) = delete;
-    Shader& operator=(const Shader&) = delete;
+        Shader(const Shader&) = delete;
+        Shader& operator=(const Shader&) = delete;
 
-    void use() const;
+        void use() const;
 
-    GLuint id() const;
+        GLuint id() const;
 
-private:
-    GLuint programID;
+    private:
+        GLuint programID;
 };
 
 #endif

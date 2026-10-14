@@ -1,87 +1,51 @@
-
 #include "house.h"
 
+#include "mesh_utils.h"
 #include <vector>
+
+using MeshUtils::addTriangle;
+using MeshUtils::addQuad;
+using MeshUtils::vertexCount;
 
 namespace {
     std::vector<float> vertices;
 
-    void addTriangle(float ax, float ay, float az, float bx, float by, float bz, float cx, float cy, float cz) {
-        vertices.insert(vertices.end(), {
-            ax, ay, az,
-            bx, by, bz,
-            cx, cy, cz
-        });
-    }
-
-    void addQuad(float ax, float ay, float az, float bx, float by, float bz, float cx, float cy, float cz, float dx, float dy, float dz) {
-        addTriangle(ax, ay, az, bx, by, bz, cx, cy, cz);
-        addTriangle(ax, ay, az, cx, cy, cz, dx, dy, dz);
-    }
-
-    GLint vertexCount() {
-        return static_cast<GLint>(vertices.size() / 3);
-    }
-
     void addWalls() {
-        addQuad(-1,0, 1,  1,0, 1,  1,2, 1, -1,2, 1);
-        addQuad( 1,0,-1, -1,0,-1, -1,2,-1,  1,2,-1);
+        addQuad(vertices, -1,0,1, 1,0,1, 1,2,1, -1,2,1);
+        addQuad(vertices, 1,0,-1, -1,0,-1, -1,2,-1, 1,2,-1);
 
-        addQuad(-1,0,-1, -1,0, 1, -1,2, 1, -1,2,-1);
-        addQuad( 1,0, 1,  1,0,-1,  1,2,-1,  1,2, 1);
+        addQuad(vertices, -1,0,-1, -1,0, 1, -1,2, 1, -1,2,-1);
+        addQuad(vertices, 1,0, 1,  1,0,-1,  1,2,-1,  1,2, 1);
 
-        addQuad(-1,2, 1,  1,2, 1,  1,2,-1, -1,2,-1);
-        addQuad(-1,0,-1,  1,0,-1,  1,0, 1, -1,0, 1);
+        addQuad(vertices, -1,2, 1,  1,2, 1,  1,2,-1, -1,2,-1);
+        addQuad(vertices, -1,0,-1,  1,0,-1,  1,0, 1, -1,0, 1);
     }
 
     void addRoof() {
-        addQuad(
-            -1.4f, 1.7f,  1.4f,
-            0.0f, 3.0f,  1.0f,
-            0.0f, 3.0f, -1.0f,
-            -1.4f, 1.7f, -1.4f
-        );
+        addQuad(vertices, -1.4f, 1.7f,  1.4f, 0.0f, 3.0f,  1.0f, 0.0f, 3.0f, -1.0f, -1.4f, 1.7f, -1.4f);
+        addQuad(vertices, 1.4f, 1.7f,  1.4f, 0.0f, 3.0f,  1.0f, 0.0f, 3.0f, -1.0f, 1.4f, 1.7f, -1.4f);
 
-        addQuad(
-            1.4f, 1.7f,  1.4f,
-            0.0f, 3.0f,  1.0f,
-            0.0f, 3.0f, -1.0f,
-            1.4f, 1.7f, -1.4f
-        );
-
-        addTriangle(
-            -1.4f, 1.7f, 1.4f,
-            1.4f, 1.7f, 1.4f,
-            0.0f, 3.0f, 1.0f
-        );
-
-        addTriangle(
-            1.4f, 1.7f, -1.4f,
-            -1.4f, 1.7f, -1.4f,
-            0.0f, 3.0f, -1.0f
-        );
+        addTriangle(vertices, -1.4f, 1.7f, 1.4f, 1.4f, 1.7f, 1.4f, 0.0f, 3.0f, 1.0f);
+        addTriangle(vertices, 1.4f, 1.7f, -1.4f, -1.4f, 1.7f, -1.4f, 0.0f, 3.0f, -1.0f);
     }
 
     void addDoor() {
-        addQuad(-0.25f,0,1.025f,
-                 0.25f,0,1.025f,
-                 0.25f,1.2f,1.025f,
-                -0.25f,1.2f,1.025f);
+        addQuad(vertices, -0.25f,0,1.025f, 0.25f,0,1.025f, 0.25f,1.2f,1.025f, -0.25f,1.2f,1.025f);
     }
 }
 
 House::House() {
-    wallsStart = vertexCount();
+    wallsStart = vertexCount(vertices);
     addWalls();
-    wallsCount = vertexCount() - wallsStart;
+    wallsCount = vertexCount(vertices) - wallsStart;
 
-    roofStart = vertexCount();
+    roofStart = vertexCount(vertices);
     addRoof();
-    roofCount = vertexCount() - roofStart;
+    roofCount = vertexCount(vertices) - roofStart;
 
-    doorStart = vertexCount();
+    doorStart = vertexCount(vertices);
     addDoor();
-    doorCount = vertexCount() - doorStart;
+    doorCount = vertexCount(vertices) - doorStart;
 
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);

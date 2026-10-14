@@ -62,6 +62,7 @@ add_executable(virtual-village-opengl
     src/ground.cpp
     src/house.cpp
     src/windmill.cpp
+    src/tower.cpp
     src/shader.cpp
     src/shadow_map.cpp
     ${GLAD_C_FILE}

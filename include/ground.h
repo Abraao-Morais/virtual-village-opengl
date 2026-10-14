@@ -3,17 +3,16 @@
 #include <glad/glad.h>
 
 class Ground {
-public:
-    Ground();
-    ~Ground();
+    public:
+        Ground();
+        ~Ground();
 
-    void draw();
+        void draw();
 
-    // Impede cópias acidentais dos buffers da GPU.
-    Ground(const Ground&) = delete;
-    Ground& operator=(const Ground&) = delete;
+        Ground(const Ground&) = delete;
+        Ground& operator=(const Ground&) = delete;
 
-private:
-    GLuint VAO = 0;
-    GLuint VBO = 0;
+    private:
+        GLuint VAO = 0;
+        GLuint VBO = 0;
 };
