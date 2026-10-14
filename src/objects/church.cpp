@@ -1,146 +1,119 @@
 #include "objects/church.h"
 
+#include "objects/mesh_utils.h"
 #include <vector>
+
+using MeshUtils::addTriangle;
+using MeshUtils::addQuad;
+using MeshUtils::vertexCount;
 
 namespace {
     std::vector<float> vertices;
 
-    void addTriangle(float ax, float ay, float az,
-                     float bx, float by, float bz,
-                     float cx, float cy, float cz) {
-        vertices.insert(vertices.end(), {ax, ay, az, bx, by, bz, cx, cy, cz});
-    }
-
-    void addQuad(float ax, float ay, float az,
-                 float bx, float by, float bz,
-                 float cx, float cy, float cz,
-                 float dx, float dy, float dz) {
-        addTriangle(ax, ay, az, bx, by, bz, cx, cy, cz);
-        addTriangle(ax, ay, az, cx, cy, cz, dx, dy, dz);
-    }
-
-    GLint vertexCount() {
-        return static_cast<GLint>(vertices.size() / 3);
-    }
-
-    // Nave principal: 6 unidades de largura, 8 de comprimento e 4.5 de altura.
     void addNave() {
         // Frente (+Z), deixando a porta como detalhe sobreposto.
-        addQuad(-3, 0, 4,  3, 0, 4,  3, 4.5f, 4, -3, 4.5f, 4);
+        addQuad(vertices, -3, 0, 4,  3, 0, 4,  3, 4.5f, 4, -3, 4.5f, 4);
         // Fundo (-Z).
-        addQuad( 3, 0,-4, -3, 0,-4, -3, 4.5f,-4,  3, 4.5f,-4);
+        addQuad(vertices, 3, 0,-4, -3, 0,-4, -3, 4.5f,-4,  3, 4.5f,-4);
         // Laterais.
-        addQuad(-3,0,-4, -3,0,4, -3,4.5f,4, -3,4.5f,-4);
-        addQuad( 3,0, 4,  3,0,-4,  3,4.5f,-4,  3,4.5f,4);
+        addQuad(vertices, -3,0,-4, -3,0,4, -3,4.5f,4, -3,4.5f,-4);
+        addQuad(vertices, 3,0, 4,  3,0,-4,  3,4.5f,-4,  3,4.5f,4);
         // Base e teto interno.
-        addQuad(-3,0,-4, 3,0,-4, 3,0,4, -3,0,4);
-        addQuad(-3,4.5f,4, 3,4.5f,4, 3,4.5f,-4, -3,4.5f,-4);
+        addQuad(vertices, -3,0,-4, 3,0,-4, 3,0,4, -3,0,4);
+        addQuad(vertices, -3,4.5f,4, 3,4.5f,4, 3,4.5f,-4, -3,4.5f,-4);
 
         // Frontão triangular da fachada.
-        addTriangle(-3,4.5f,4.02f, 3,4.5f,4.02f, 0,6.5f,4.02f);
+        addTriangle(vertices, -3,4.5f,4.02f, 3,4.5f,4.02f, 0,6.5f,4.02f);
         // Frontão do fundo.
-        addTriangle(3,4.5f,-4.02f, -3,4.5f,-4.02f, 0,6.5f,-4.02f);
+        addTriangle(vertices, 3,4.5f,-4.02f, -3,4.5f,-4.02f, 0,6.5f,-4.02f);
     }
 
     void addNaveRoof() {
         // Duas águas do telhado, com beiral ligeiramente saliente.
-        addQuad(-3.5f,4.35f,4.4f, 0,6.6f,4.4f, 0,6.6f,-4.4f, -3.5f,4.35f,-4.4f);
-        addQuad( 3.5f,4.35f,4.4f, 0,6.6f,4.4f, 0,6.6f,-4.4f,  3.5f,4.35f,-4.4f);
+        addQuad(vertices, -3.5f,4.35f,4.4f, 0,6.6f,4.4f, 0,6.6f,-4.4f, -3.5f,4.35f,-4.4f);
+        addQuad(vertices, 3.5f,4.35f,4.4f, 0,6.6f,4.4f, 0,6.6f,-4.4f,  3.5f,4.35f,-4.4f);
         // Fechamentos triangulares das extremidades do telhado.
-        addTriangle(-3.5f,4.35f,4.4f, 3.5f,4.35f,4.4f, 0,6.6f,4.4f);
-        addTriangle(3.5f,4.35f,-4.4f, -3.5f,4.35f,-4.4f, 0,6.6f,-4.4f);
+        addTriangle(vertices, -3.5f,4.35f,4.4f, 3.5f,4.35f,4.4f, 0,6.6f,4.4f);
+        addTriangle(vertices, 3.5f,4.35f,-4.4f, -3.5f,4.35f,-4.4f, 0,6.6f,-4.4f);
     }
 
     void addTower() {
-        // Torre frontal quadrada, acima da entrada.
         const float x1 = -1.05f, x2 = 1.05f;
         const float z1 = 2.9f, z2 = 4.55f;
         const float y0 = 4.4f, y1 = 7.6f;
-        addQuad(x1,y0,z2, x2,y0,z2, x2,y1,z2, x1,y1,z2);
-        addQuad(x2,y0,z1, x1,y0,z1, x1,y1,z1, x2,y1,z1);
-        addQuad(x1,y0,z1, x1,y0,z2, x1,y1,z2, x1,y1,z1);
-        addQuad(x2,y0,z2, x2,y0,z1, x2,y1,z1, x2,y1,z2);
-        addQuad(x1,y1,z2, x2,y1,z2, x2,y1,z1, x1,y1,z1);
+        addQuad(vertices, x1,y0,z2, x2,y0,z2, x2,y1,z2, x1,y1,z2);
+        addQuad(vertices, x2,y0,z1, x1,y0,z1, x1,y1,z1, x2,y1,z1);
+        addQuad(vertices, x1,y0,z1, x1,y0,z2, x1,y1,z2, x1,y1,z1);
+        addQuad(vertices, x2,y0,z2, x2,y0,z1, x2,y1,z1, x2,y1,z2);
+        addQuad(vertices, x1,y1,z2, x2,y1,z2, x2,y1,z1, x1,y1,z1);
 
         // Telhado pontudo da torre.
-        addTriangle(-1.35f,7.55f,4.8f, 1.35f,7.55f,4.8f, 0,10.0f,4.0f);
-        addTriangle(1.35f,7.55f,2.65f, -1.35f,7.55f,2.65f, 0,10.0f,3.95f);
-        addTriangle(-1.35f,7.55f,2.65f, -1.35f,7.55f,4.8f, 0,10.0f,3.95f);
-        addTriangle(1.35f,7.55f,4.8f, 1.35f,7.55f,2.65f, 0,10.0f,3.95f);
+        addTriangle(vertices, -1.35f,7.55f,4.8f, 1.35f,7.55f,4.8f, 0,10.0f,4.0f);
+        addTriangle(vertices, 1.35f,7.55f,2.65f, -1.35f,7.55f,2.65f, 0,10.0f,3.95f);
+        addTriangle(vertices, -1.35f,7.55f,2.65f, -1.35f,7.55f,4.8f, 0,10.0f,3.95f);
+        addTriangle(vertices, 1.35f,7.55f,4.8f, 1.35f,7.55f,2.65f, 0,10.0f,3.95f);
     }
 
     void addDoor() {
         // Porta dupla escura, voltada para +Z.
-        addQuad(-0.75f,0.0f,4.045f, 0.75f,0.0f,4.045f,
-                0.75f,2.25f,4.045f, -0.75f,2.25f,4.045f);
+        addQuad(vertices, -0.75f,0.0f,4.045f, 0.75f,0.0f,4.045f, 0.75f,2.25f,4.045f, -0.75f,2.25f,4.045f);
         // Pequeno triângulo acima da porta, como arco estilizado.
-        addTriangle(-0.75f,2.25f,4.05f, 0.75f,2.25f,4.05f, 0,3.05f,4.05f);
+        addTriangle(vertices, -0.75f,2.25f,4.05f, 0.75f,2.25f,4.05f, 0,3.05f,4.05f);
         // Divisão central da porta.
-        addQuad(-0.035f,0.0f,4.06f, 0.035f,0.0f,4.06f,
-                0.035f,2.25f,4.06f, -0.035f,2.25f,4.06f);
+        addQuad(vertices, -0.035f,0.0f,4.06f, 0.035f,0.0f,4.06f, 0.035f,2.25f,4.06f, -0.035f,2.25f,4.06f);
     }
 
     void addWindows() {
         // Rosácea frontal simples: janela alta com ponta triangular.
-        addQuad(-0.55f,3.25f,4.055f, 0.55f,3.25f,4.055f,
-                0.55f,4.15f,4.055f, -0.55f,4.15f,4.055f);
-        addTriangle(-0.55f,4.15f,4.055f, 0.55f,4.15f,4.055f, 0,4.85f,4.055f);
+        addQuad(vertices, -0.55f,3.25f,4.055f, 0.55f,3.25f,4.055f, 0.55f,4.15f,4.055f, -0.55f,4.15f,4.055f);
+        addTriangle(vertices, -0.55f,4.15f,4.055f, 0.55f,4.15f,4.055f, 0,4.85f,4.055f);
 
         // Janelas altas nas duas laterais da nave.
         for (float z : {-2.8f, 0.0f, 2.8f}) {
             // Lado esquerdo (-X).
-            addQuad(-3.025f,1.9f,z-0.38f, -3.025f,1.9f,z+0.38f,
-                    -3.025f,3.35f,z+0.38f, -3.025f,3.35f,z-0.38f);
-            addTriangle(-3.025f,3.35f,z-0.38f, -3.025f,3.35f,z+0.38f,
-                        -3.025f,3.85f,z);
+            addQuad(vertices, -3.025f,1.9f,z-0.38f, -3.025f,1.9f,z+0.38f, -3.025f,3.35f,z+0.38f, -3.025f,3.35f,z-0.38f);
+            addTriangle(vertices, -3.025f,3.35f,z-0.38f, -3.025f,3.35f,z+0.38f, -3.025f,3.85f,z);
             // Lado direito (+X).
-            addQuad(3.025f,1.9f,z+0.38f, 3.025f,1.9f,z-0.38f,
-                    3.025f,3.35f,z-0.38f, 3.025f,3.35f,z+0.38f);
-            addTriangle(3.025f,3.35f,z+0.38f, 3.025f,3.35f,z-0.38f,
-                        3.025f,3.85f,z);
+            addQuad(vertices, 3.025f,1.9f,z+0.38f, 3.025f,1.9f,z-0.38f, 3.025f,3.35f,z-0.38f, 3.025f,3.35f,z+0.38f);
+            addTriangle(vertices, 3.025f,3.35f,z+0.38f, 3.025f,3.35f,z-0.38f, 3.025f,3.85f,z);
         }
 
         // Abertura frontal da torre.
-        addQuad(-0.42f,5.55f,4.57f, 0.42f,5.55f,4.57f,
-                0.42f,6.85f,4.57f, -0.42f,6.85f,4.57f);
-        addTriangle(-0.42f,6.85f,4.57f, 0.42f,6.85f,4.57f, 0,7.35f,4.57f);
+        addQuad(vertices, -0.42f,5.55f,4.57f, 0.42f,5.55f,4.57f, 0.42f,6.85f,4.57f, -0.42f,6.85f,4.57f);
+        addTriangle(vertices, -0.42f,6.85f,4.57f, 0.42f,6.85f,4.57f, 0,7.35f,4.57f);
     }
 
     void addTrim() {
         // Faixas de pedra na base e nos níveis da torre.
-        addQuad(-3.12f,0.25f,4.08f, 3.12f,0.25f,4.08f,
-                3.12f,0.38f,4.08f, -3.12f,0.38f,4.08f);
-        addQuad(-1.12f,7.45f,4.62f, 1.12f,7.45f,4.62f,
-                1.12f,7.62f,4.62f, -1.12f,7.62f,4.62f);
+        addQuad(vertices, -3.12f,0.25f,4.08f, 3.12f,0.25f,4.08f, 3.12f,0.38f,4.08f, -3.12f,0.38f,4.08f);
+        addQuad(vertices, -1.12f,7.45f,4.62f, 1.12f,7.45f,4.62f, 1.12f,7.62f,4.62f, -1.12f,7.62f,4.62f);
         // Cruz simples no topo do telhado.
-        addQuad(-0.10f,8.6f,4.02f, 0.10f,8.6f,4.02f,
-                0.10f,9.65f,4.02f, -0.10f,9.65f,4.02f);
-        addQuad(-0.42f,9.05f,4.025f, 0.42f,9.05f,4.025f,
-                0.42f,9.22f,4.025f, -0.42f,9.22f,4.025f);
+        addQuad(vertices, -0.10f,8.6f,4.02f, 0.10f,8.6f,4.02f, 0.10f,9.65f,4.02f, -0.10f,9.65f,4.02f);
+        addQuad(vertices, -0.42f,9.05f,4.025f, 0.42f,9.05f,4.025f, 0.42f,9.22f,4.025f, -0.42f,9.22f,4.025f);
     }
 }
 
 Church::Church() {
-    stoneStart = vertexCount();
+    stoneStart = vertexCount(vertices);
     addNave();
     addTower();
-    stoneCount = vertexCount() - stoneStart;
+    stoneCount = vertexCount(vertices) - stoneStart;
 
-    roofStart = vertexCount();
+    roofStart = vertexCount(vertices);
     addNaveRoof();
-    roofCount = vertexCount() - roofStart;
+    roofCount = vertexCount(vertices) - roofStart;
 
-    doorStart = vertexCount();
+    doorStart = vertexCount(vertices);
     addDoor();
-    doorCount = vertexCount() - doorStart;
+    doorCount = vertexCount(vertices) - doorStart;
 
-    windowStart = vertexCount();
+    windowStart = vertexCount(vertices);
     addWindows();
-    windowCount = vertexCount() - windowStart;
+    windowCount = vertexCount(vertices) - windowStart;
 
-    trimStart = vertexCount();
+    trimStart = vertexCount(vertices);
     addTrim();
-    trimCount = vertexCount() - trimStart;
+    trimCount = vertexCount(vertices) - trimStart;
 
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);

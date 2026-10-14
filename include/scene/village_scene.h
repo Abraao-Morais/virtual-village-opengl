@@ -9,6 +9,8 @@
 #include "objects/house.h"
 #include "objects/windmill.h"
 #include "objects/tower.h"
+#include "objects/church.h"
+#include "objects/gravestone.h"
 
 class VillageScene {
     public:
@@ -26,20 +28,24 @@ class VillageScene {
 
     private:
         Ground ground;
-        House house;
-        Windmill windmill;
-        Tower tower;
-
         glm::mat4 modelGround;
+
+        House house;
         std::array<glm::mat4, 8> houseModels;
 
+        Windmill windmill;
         glm::mat4 modelWindmill;
         glm::mat4 rotorModel;
-
-        std::array<glm::mat4, 2> towerModels;
-
         float bladeAngle;
         float rotationSpeed;
-
         void updateRotorModel();
+
+        Tower tower;
+        std::array<glm::mat4, 2> towerModels;
+
+        Church church;
+        glm::mat4 modelChurch;
+
+        Gravestone gravestone;
+        std::array<glm::mat4, 16> graveStonesModels;
 };

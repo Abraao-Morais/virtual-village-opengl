@@ -1,6 +1,11 @@
 #pragma once
 
+#include <array>
 #include <vector>
+#include <cmath>
+
+#include <glad/glad.h>
+#include <glm/glm.hpp>
 
 namespace MeshUtils {
 

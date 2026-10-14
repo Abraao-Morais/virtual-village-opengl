@@ -1,11 +1,11 @@
-#include "gravestone.h"
+#include "objects/gravestone.h"
 
 #include <vector>
 #include <cmath>
 #include <array>
 #include <glm/glm.hpp>
 
-#include "mesh_utils.h"
+#include "objects/mesh_utils.h"
 
 using MeshUtils::addTriangle;
 using MeshUtils::addQuad;
@@ -16,8 +16,7 @@ namespace {
     constexpr int ARC_SEGMENTS = 12;
     std::vector<float> vertices;
 
-    void addBox(float x0, float y0, float z0,
-                float x1, float y1, float z1) {
+    void addBox(float x0, float y0, float z0, float x1, float y1, float z1) {
         // Frente (+Z).
         addQuad(vertices, x0,y0,z1, x1,y0,z1, x1,y1,z1, x0,y1,z1);
         // Fundo (-Z).
@@ -44,8 +43,7 @@ namespace {
         outline.emplace_back( halfWidth, arcCenterY);
         for (int i = 1; i <= ARC_SEGMENTS; ++i) {
             const float angle = PI * static_cast<float>(i) / ARC_SEGMENTS;
-            outline.emplace_back(halfWidth * std::cos(angle),
-                                 arcCenterY + halfWidth * std::sin(angle));
+            outline.emplace_back(halfWidth * std::cos(angle), arcCenterY + halfWidth * std::sin(angle));
         }
 
         // Frente e verso triangulados a partir de um ponto interno.

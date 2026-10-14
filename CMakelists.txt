@@ -65,6 +65,8 @@ add_executable(virtual-village-opengl
     src/objects/house.cpp
     src/objects/windmill.cpp
     src/objects/tower.cpp
+    src/objects/church.cpp
+    src/objects/gravestone.cpp
     src/rendering/shader.cpp
     src/rendering/shadow_map.cpp
     src/scene/village_scene.cpp

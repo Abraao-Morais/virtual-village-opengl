@@ -15,21 +15,49 @@ VillageScene::VillageScene():
           createModel({-3.0f, 0.0f, -4.0f}),
           createModel({ 3.0f, 0.0f, -4.0f}),
           createModel({ 9.0f, 0.0f, -4.0f}),
-          createModel({-9.0f, 0.0f, 4.0f}, 180.0f),
-          createModel({-3.0f, 0.0f, 4.0f}, 180.0f),
-          createModel({ 3.0f, 0.0f, 4.0f}, 180.0f),
-          createModel({ 9.0f, 0.0f, 4.0f}, 180.0f)
+          createModel({-9.0f, 0.0f, 8.0f}, 180.0f),
+          createModel({-3.0f, 0.0f, 8.0f}, 180.0f),
+          createModel({ 3.0f, 0.0f, 8.0f}, 180.0f),
+          createModel({ 9.0f, 0.0f, 8.0f}, 180.0f)
       },
 
       towerModels{
-          createModel({50.0f, 0.0f, -8.0f}),
-          createModel({50.0f, 0.0f,  8.0f})
+          createModel({45.0f, 0.0f, -8.0f}),
+          createModel({45.0f, 0.0f,  8.0f})
       },
 
       modelWindmill(createModel({0.0f, 0.0f, -12.0f})),
       rotorModel(1.0f),
       bladeAngle(0.0f),
-      rotationSpeed(glm::radians(7.0f)) 
+      rotationSpeed(glm::radians(7.0f)),
+
+      modelChurch(createModel({-20.0f, 0.0f, 8.0f}, 90.0f)),
+
+      graveStonesModels{
+        // Fileira 1
+        createModel({-39.0f, 0.0f,  6.0f}),
+        createModel({-36.5f, 0.0f,  6.0f}),
+        createModel({-34.0f, 0.0f,  6.0f}),
+        createModel({-31.5f, 0.0f,  6.0f}),
+
+        // Fileira 2
+        createModel({-39.0f, 0.0f,  9.0f}),
+        createModel({-36.5f, 0.0f,  9.0f}),
+        createModel({-34.0f, 0.0f,  9.0f}),
+        createModel({-31.5f, 0.0f,  9.0f}),
+
+        // Fileira 3
+        createModel({-39.0f, 0.0f, 12.0f}),
+        createModel({-36.5f, 0.0f, 12.0f}),
+        createModel({-34.0f, 0.0f, 12.0f}),
+        createModel({-31.5f, 0.0f, 12.0f}),
+
+        // Fileira 4
+        createModel({-39.0f, 0.0f, 15.0f}),
+        createModel({-36.5f, 0.0f, 15.0f}),
+        createModel({-34.0f, 0.0f, 15.0f}),
+        createModel({-31.5f, 0.0f, 15.0f})
+    }
 {
     updateRotorModel();
 }
@@ -69,6 +97,16 @@ void VillageScene::draw(GLint modelLocation, GLint colorLocation){
         ShaderUtils::setMat4(modelLocation, model);
         tower.draw(colorLocation);
     }
+
+    // Igreja
+    ShaderUtils::setMat4(modelLocation, modelChurch);
+    church.draw(colorLocation);
+
+    // Lápides
+    for (const auto& model : graveStonesModels){
+        ShaderUtils::setMat4(modelLocation, model);
+        gravestone.draw(colorLocation);
+    }
 }
 
 void VillageScene::drawShadow(GLint modelLocation, GLint lightSpaceLocation, const glm::mat4& lightSpaceMatrix) {
@@ -96,5 +134,15 @@ void VillageScene::drawShadow(GLint modelLocation, GLint lightSpaceLocation, con
     for (const auto& model : towerModels) {
         ShaderUtils::setMat4(modelLocation, model);
         tower.draw();
+    }
+
+    // Igreja
+    ShaderUtils::setMat4(modelLocation, modelWindmill);
+    windmill.draw();
+
+    // Lápides
+    for (const auto& model : graveStonesModels){
+        ShaderUtils::setMat4(modelLocation, model);
+        gravestone.draw();
     }
 }
