@@ -1,6 +1,6 @@
-#include "house.h"
+#include "objects/house.h"
 
-#include "mesh_utils.h"
+#include "objects/mesh_utils.h"
 #include <vector>
 
 using MeshUtils::addTriangle;

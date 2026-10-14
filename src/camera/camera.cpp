@@ -1,4 +1,4 @@
-#include "camera.h"
+#include "camera/camera.h"
 
 #include <GLFW/glfw3.h>
 #include <cmath>
@@ -21,17 +21,10 @@ Camera::Camera()
 void Camera::processKeyboard(int key, float deltaTime) {
     float velocity = movementSpeed * deltaTime;
 
-    if (key == GLFW_KEY_W)
-        position += front * velocity;
-
-    if (key == GLFW_KEY_S)
-        position -= front * velocity;
-
-    if (key == GLFW_KEY_A)
-        position -= right * velocity;
-
-    if (key == GLFW_KEY_D)
-        position += right * velocity;
+    if (key == GLFW_KEY_W) position += front * velocity;
+    if (key == GLFW_KEY_S) position -= front * velocity;
+    if (key == GLFW_KEY_A) position -= right * velocity;
+    if (key == GLFW_KEY_D) position += right * velocity;
 
     // Mantém a câmera na altura dos olhos.
     position.y = 1.7f;

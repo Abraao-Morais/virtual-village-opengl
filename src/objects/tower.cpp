@@ -1,6 +1,6 @@
-#include "tower.h"
+#include "objects/tower.h"
 
-#include "mesh_utils.h"
+#include "objects/mesh_utils.h"
 #include <vector>
 #include <cmath>
 

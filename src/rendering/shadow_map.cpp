@@ -1,4 +1,4 @@
-#include "shadow_map.h"
+#include "rendering/shadow_map.h"
 
 #include <iostream>
 

@@ -58,13 +58,16 @@ endif()
 # Cria um único executável com todos os ficheiros do projeto
 add_executable(virtual-village-opengl
     src/main.cpp
-    src/camera.cpp
-    src/ground.cpp
-    src/house.cpp
-    src/windmill.cpp
-    src/tower.cpp
-    src/shader.cpp
-    src/shadow_map.cpp
+    src/stb_image.cpp
+    src/application/application.cpp
+    src/camera/camera.cpp
+    src/objects/ground.cpp
+    src/objects/house.cpp
+    src/objects/windmill.cpp
+    src/objects/tower.cpp
+    src/rendering/shader.cpp
+    src/rendering/shadow_map.cpp
+    src/scene/village_scene.cpp
     ${GLAD_C_FILE}
 )
 

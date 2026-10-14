@@ -1,4 +1,4 @@
-#include "ground.h"
+#include "objects/ground.h"
 
 Ground::Ground() {
     // Plano de 200 x 200 unidades.

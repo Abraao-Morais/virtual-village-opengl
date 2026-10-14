@@ -3,12 +3,12 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
+
 #include <vector>
 #include <cmath>
 #include <stdexcept>
 #include <string>
 
-#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 class SkySphere {
@@ -113,17 +113,10 @@ class SkySphere {
         }
 
         void cleanup(){
-            if (texture != 0)
-                glDeleteTextures(1, &texture);
-
-            if (EBO != 0)
-                glDeleteBuffers(1, &EBO);
-
-            if (VBO != 0)
-                glDeleteBuffers(1, &VBO);
-
-            if (VAO != 0)
-                glDeleteVertexArrays(1, &VAO);
+            if (texture != 0) glDeleteTextures(1, &texture);
+            if (EBO != 0) glDeleteBuffers(1, &EBO);
+            if (VBO != 0) glDeleteBuffers(1, &VBO);
+            if (VAO != 0) glDeleteVertexArrays(1, &VAO);
 
             texture = 0;
             EBO = 0;

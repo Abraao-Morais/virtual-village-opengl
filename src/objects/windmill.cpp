@@ -1,6 +1,6 @@
-#include "windmill.h"
+#include "objects/windmill.h"
 
-#include "mesh_utils.h"
+#include "objects/mesh_utils.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <array>
