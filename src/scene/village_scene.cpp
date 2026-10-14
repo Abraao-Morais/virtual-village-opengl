@@ -43,7 +43,7 @@ VillageScene::VillageScene():
         // Fileira 2
         createModel({-39.0f, 0.0f,  9.0f}),
         createModel({-36.5f, 0.0f,  9.0f}),
-        createModel({-34.0f, 0.0f,  9.0f}),
+        createModel({-34.0f, 0.0f,  9.0f}, 75.0f),
         createModel({-31.5f, 0.0f,  9.0f}),
 
         // Fileira 3
@@ -57,7 +57,9 @@ VillageScene::VillageScene():
         createModel({-36.5f, 0.0f, 15.0f}),
         createModel({-34.0f, 0.0f, 15.0f}),
         createModel({-31.5f, 0.0f, 15.0f})
-    }
+    },
+
+    modelPumpkin(createModel({20.0f, 0.0f, 10.0f}, 270.0f))
 {
     updateRotorModel();
 }
@@ -107,6 +109,10 @@ void VillageScene::draw(GLint modelLocation, GLint colorLocation){
         ShaderUtils::setMat4(modelLocation, model);
         gravestone.draw(colorLocation);
     }
+
+    // Abobora
+    ShaderUtils::setMat4(modelLocation, modelPumpkin);
+    pumpkin.draw(colorLocation);
 }
 
 void VillageScene::drawShadow(GLint modelLocation, GLint lightSpaceLocation, const glm::mat4& lightSpaceMatrix) {
@@ -137,12 +143,16 @@ void VillageScene::drawShadow(GLint modelLocation, GLint lightSpaceLocation, con
     }
 
     // Igreja
-    ShaderUtils::setMat4(modelLocation, modelWindmill);
-    windmill.draw();
+    ShaderUtils::setMat4(modelLocation, modelChurch);
+    church.draw();
 
     // Lápides
     for (const auto& model : graveStonesModels){
         ShaderUtils::setMat4(modelLocation, model);
         gravestone.draw();
     }
+
+     // Abobora
+    ShaderUtils::setMat4(modelLocation, modelPumpkin);
+    pumpkin.draw();
 }

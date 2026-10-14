@@ -11,6 +11,7 @@
 #include "objects/tower.h"
 #include "objects/church.h"
 #include "objects/gravestone.h"
+#include "objects/pumpkin.h"
 
 class VillageScene {
     public:
@@ -48,4 +49,7 @@ class VillageScene {
 
         Gravestone gravestone;
         std::array<glm::mat4, 16> graveStonesModels;
+
+        Pumpkin pumpkin;
+        glm::mat4 modelPumpkin;
 };

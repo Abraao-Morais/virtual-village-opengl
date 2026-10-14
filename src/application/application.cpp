@@ -26,7 +26,7 @@ namespace {
 
     const glm::vec3 GROUND_COLOR(0.3098f, 0.2352f, 0.1411f);
 
-    const glm::vec3 LIGHT_POSITION(-6.0f, 12.0f, 8.0f);
+    const glm::vec3 LIGHT_POSITION(-20.0f, 35.0f, 25.0f);
     const glm::vec3 LIGHT_TARGET(3.0f, 0.0f, 0.0f);
 }
 
@@ -158,7 +158,7 @@ void Application::renderFrame() {
     const glm::mat4 view = camera.getViewMatrix();
     const float aspectRatio = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
     const glm::mat4 projection = glm::perspective(glm::radians(60.0f), aspectRatio, 0.1f, 300.0f);
-    const glm::mat4 lightProjection = glm::ortho(-18.0f, 18.0f, -18.0f, 18.0f, 1.0f, 50.0f);
+    const glm::mat4 lightProjection = glm::ortho(-55.0f, 55.0f, -35.0f, 35.0f, 1.0f, 100.0f);
     const glm::mat4 lightView = glm::lookAt(LIGHT_POSITION, LIGHT_TARGET, glm::vec3(0.0f, 1.0f, 0.0f));
     const glm::mat4 lightSpaceMatrix = lightProjection * lightView;
     const GLint modelLocation = glGetUniformLocation(shader->id(), "model");
